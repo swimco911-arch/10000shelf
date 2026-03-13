@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grand Shelf</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; margin: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin { animation: spin 1s linear infinite; }
+    @keyframes zoom-in-95 { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .animate-zoom-in { animation: zoom-in-95 0.3s ease forwards; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useCallback } = React;
+
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3pGwZSM-xiNIE79HRbOW_E4ldgeOy9MtWNzzoZB6ma7ksrjRugeM055ME2xKO7xzp84cG7VgOoaEq/pub?gid=0&single=true&output=csv";
+
+    // SVG Icons
+    const BookOpen = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>;
+    const X = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    const Search = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>;
+    const Moon = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
+    const Sun = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
+    const CheckCircle2 = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+    const Clock = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>;
+    const Loader2 = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>;
+    const ArrowUpDown = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><line x1="12" y1="2" x2="12" y2="22"/><polyline points="17 7 12 2 7 7"/><polyline points="17 17 12 22 7 17"/></svg>;
+    const Shuffle = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>;
+    const User = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>;
+    const Bookmark = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>;
+    const ExternalLink = ({size=20,className=""}) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>;
+
+    // LocalStorage 기반 저장
+    const STORAGE_KEY = 'grand-shelf-interactions';
+    const loadInteractions = () => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; } };
+    const saveInteractions = (data) => { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); };
+
+    const App = () => {
+      const [allBooks, setAllBooks] = useState([]);
+      const [userInteractions, setUserInteractions] = useState(loadInteractions);
+      const [selectedBook, setSelectedBook] = useState(null);
+      const [isLoading, setIsLoading] = useState(true);
+      const [searchTerm, setSearchTerm] = useState('');
+      const [isDarkMode, setIsDarkMode] = useState(false);
+      const [isShuffling, setIsShuffling] = useState(false);
+      const [filter, setFilter] = useState({ genre: '전체', age: '전체', sortBy: '최신순', readStatus: '전체' });
+      const [randomOrder, setRandomOrder] = useState([]);
+
+      useEffect(() => {
+        const fetchSheetData = async () => {
+          try {
+            const response = await fetch(SHEET_CSV_URL);
+            if (!response.ok) throw new Error("failed");
+            const csvText = await response.text();
+            const lines = csvText.split('\n').filter(line => line.trim() !== '');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const data = lines.slice(1).map(line => {
+              const values = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(v => v.replace(/^"|"$/g, '').trim());
+              const obj = {};
+              headers.forEach((header, i) => { obj[header] = values[i] || ''; });
+              return obj;
+            }).filter(item => item.id);
+            setAllBooks(data);
+          } catch {
+            setAllBooks(Array.from({ length: 40 }, (_, i) => ({
+              id: `sample-${i+1}`,
+              title: i === 0 ? "방망이를 찾아서" : `도서 제목 ${i+1}`,
+              category: ['모험','판타지','SF','요리','인문'][i%5],
+              age: ['아동','청소년','성인'][i%3],
+              summary: i === 0 ? "도깨비가 잃어버린 방망이를 찾는 이야기" : '신비로운 책의 내용을 곧 만나보실 수 있습니다.',
+              date: `2024-05-${String(30-(i%30)).padStart(2,'0')}`,
+              imageUrl: `https://picsum.photos/seed/${i+100}/400/600`,
+              link: '#'
+            })));
+          } finally { setIsLoading(false); }
+        };
+        fetchSheetData();
+      }, []);
+
+      const updateInteraction = (bookId, updates) => {
+        setUserInteractions(prev => {
+          const next = { ...prev, [bookId]: { ...prev[bookId], bookId, ...updates, updatedAt: new Date().toISOString() } };
+          saveInteractions(next);
+          return next;
+        });
+      };
+
+      const readCount = useMemo(() => Object.values(userInteractions).filter(i => i.isRead).length, [userInteractions]);
+      const progressPercentage = useMemo(() => allBooks.length === 0 ? 0 : Math.round((readCount/allBooks.length)*100), [readCount, allBooks]);
+
+      const handleShuffle = useCallback(() => {
+        setIsShuffling(true);
+        setFilter(prev => ({...prev, sortBy: '랜덤'}));
+        setRandomOrder([...allBooks].sort(() => Math.random()-0.5).map(b => b.id));
+        setTimeout(() => setIsShuffling(false), 600);
+      }, [allBooks]);
+
+      const filteredBooks = useMemo(() => {
+        let result = [...allBooks];
+        if (searchTerm) result = result.filter(b => b.title?.toLowerCase().includes(searchTerm.toLowerCase()));
+        if (filter.genre !== '전체') result = result.filter(b => b.category === filter.genre);
+        if (filter.age !== '전체') result = result.filter(b => b.age === filter.age);
+        if (filter.readStatus === '읽음') result = result.filter(b => userInteractions[b.id]?.isRead);
+        if (filter.readStatus === '미읽음') result = result.filter(b => !userInteractions[b.id]?.isRead);
+        if (filter.sortBy === '랜덤' && randomOrder.length > 0) {
+          result.sort((a,b) => randomOrder.indexOf(a.id)-randomOrder.indexOf(b.id));
+        } else {
+          result.sort((a,b) => {
+            if (filter.sortBy === '최신순') return new Date(b.date)-new Date(a.date);
+            if (filter.sortBy === '오래된순') return new Date(a.date)-new Date(b.date);
+            return 0;
+          });
+        }
+        return result;
+      }, [allBooks, filter, searchTerm, randomOrder, userInteractions]);
+
+      const shelfRows = useMemo(() => {
+        const rows = [];
+        for (let i = 0; i < Math.ceil(filteredBooks.length/10); i++) {
+          rows.push(filteredBooks.slice(i*10, (i+1)*10));
+        }
+        return rows;
+      }, [filteredBooks]);
+
+      const getCategoryBg = (cat) => {
+        const m = {'모험':'#7f1d1d','판타지':'#581c87','SF':'#1e1b4b','요리':'#064e3b','인문':'#78350f'};
+        return m[cat] || '#292524';
+      };
+
+      if (isLoading) return (
+        <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+          <Loader2 size={48} className="animate-spin text-amber-500" />
+        </div>
+      );
+
+      return (
+        <div style={{minHeight:'100vh', transition:'all 0.5s', background: isDarkMode ? '#0a0705' : '#fcfaf7', color: isDarkMode ? '#fefce8' : '#1c1917', fontFamily:"'Noto Sans KR', sans-serif"}}>
+
+          <header style={{maxWidth:'80rem', margin:'0 auto', paddingTop:'2.5rem', paddingLeft:'1.5rem', paddingRight:'1.5rem'}}>
+            <div className="flex flex-col md:flex-row justify-between items-center gap-8 mb-10">
+              <div className="text-center md:text-left flex flex-col gap-2">
+                <h1 style={{fontSize:'clamp(2rem,5vw,3.75rem)', fontWeight:900, letterSpacing:'-0.05em', display:'flex', alignItems:'center', gap:'1rem'}}>
+                  <BookOpen size={40} style={{color:'#f59e0b'}} /> GRAND SHELF
+                </h1>
+                <div style={{display:'flex', alignItems:'center', gap:'1rem', marginTop:'0.5rem'}}>
+                  <div style={{display:'flex', alignItems:'center', gap:'0.5rem', opacity:0.6}}>
+                    <User size={16} />
+                    <p style={{fontSize:'0.75rem', fontWeight:500}}>게스트 (로컬 저장)</p>
+                  </div>
+                  <div style={{display:'flex', alignItems:'center', gap:'0.5rem', color:'#d97706', fontWeight:700, fontSize:'0.75rem', background:'rgba(245,158,11,0.1)', padding:'0.25rem 0.75rem', borderRadius:'9999px'}}>
+                    <Bookmark size={12} />
+                    <span>{readCount}권 읽음 ({progressPercentage}%)</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{display:'flex', flexWrap:'wrap', justifyContent:'center', gap:'0.75rem', padding:'0.5rem', background:'rgba(120,113,108,0.05)', borderRadius:'1rem', border:'1px solid rgba(120,113,108,0.1)'}}>
+                <div style={{position:'relative', flex:1}}>
+                  <Search size={16} style={{position:'absolute', left:'0.75rem', top:'50%', transform:'translateY(-50%)', opacity:0.3}} />
+                  <input
+                    type="text" placeholder="검색..." value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    style={{paddingLeft:'2.5rem', paddingRight:'1rem', paddingTop:'0.5rem', paddingBottom:'0.5rem', background:'rgba(120,113,108,0.05)', border:'none', borderRadius:'0.75rem', fontSize:'0.875rem', minWidth:'12rem', outline:'none', color:'inherit'}}
+                  />
+                </div>
+                <button onClick={() => setIsDarkMode(!isDarkMode)} style={{padding:'0.5rem', background:'rgba(120,113,108,0.1)', borderRadius:'0.75rem', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center'}}>
+                  {isDarkMode ? <Sun size={20} style={{color:'#fbbf24'}} /> : <Moon size={20} style={{color:'#57534e'}} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Bar */}
+            <div style={{paddingBottom:'1.5rem', marginBottom:'2.5rem'}}>
+              <div style={{display:'flex', flexWrap:'wrap', gap:'2rem', padding:'1.5rem', borderRadius:'1.5rem', border: isDarkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e7e5e4', background: isDarkMode ? 'rgba(0,0,0,0.2)' : 'white', boxShadow: isDarkMode ? 'none' : '0 1px 3px rgba(0,0,0,0.05)'}}>
+                {['genre','age','readStatus'].map(type => (
+                  <div key={type} style={{display:'flex', flexDirection:'column', gap:'0.75rem'}}>
+                    <span style={{fontSize:'10px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.2em', opacity:0.3}}>
+                      {type === 'age' ? 'Age' : type === 'genre' ? 'Genre' : 'Status'}
+                    </span>
+                    <div style={{display:'flex', flexWrap:'wrap', gap:'0.5rem'}}>
+                      {(type === 'genre' ? ['전체','모험','판타지','SF','요리','인문'] : type === 'age' ? ['전체','아동','청소년','성인'] : ['전체','읽음','미읽음']).map(val => (
+                        <button key={val} onClick={() => setFilter({...filter, [type]: val})} style={{padding:'0.375rem 0.75rem', borderRadius:'0.75rem', fontSize:'11px', fontWeight:700, border:'none', cursor:'pointer', transition:'all 0.2s', background: filter[type]===val ? '#fde68a' : 'transparent', color: filter[type]===val ? '#1c1917' : 'inherit', opacity: filter[type]===val ? 1 : 0.4, transform: filter[type]===val ? 'scale(1.05)' : 'scale(1)'}}>
+                          {val}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <div style={{display:'flex', flexDirection:'column', gap:'0.75rem', borderLeft: '1px solid rgba(120,113,108,0.1)', paddingLeft:'2.5rem', marginLeft:'auto'}}>
+                  <span style={{fontSize:'10px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.2em', opacity:0.3, display:'flex', alignItems:'center', gap:'0.5rem'}}>
+                    <ArrowUpDown size={12} /> Sort
+                  </span>
+                  <div style={{display:'flex', alignItems:'center', gap:'1rem'}}>
+                    <div style={{display:'flex', gap:'0.5rem', padding:'0.375rem', background:'rgba(120,113,108,0.05)', borderRadius:'1rem'}}>
+                      {['최신순','오래된순'].map(sort => (
+                        <button key={sort} onClick={() => setFilter({...filter, sortBy: sort})} style={{padding:'0.375rem 1rem', borderRadius:'0.75rem', fontSize:'11px', fontWeight:700, border:'none', cursor:'pointer', transition:'all 0.2s', background: filter.sortBy===sort ? 'white' : 'transparent', color: filter.sortBy===sort ? '#d97706' : 'inherit', opacity: filter.sortBy===sort ? 1 : 0.4, boxShadow: filter.sortBy===sort ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'}}>
+                          {sort}
+                        </button>
+                      ))}
+                    </div>
+                    <button onClick={handleShuffle} style={{display:'flex', alignItems:'center', gap:'0.5rem', padding:'0.625rem 1.25rem', borderRadius:'1rem', fontSize:'11px', fontWeight:900, border: filter.sortBy==='랜덤' ? '2px solid #d97706' : '2px solid transparent', cursor:'pointer', transition:'all 0.2s', background: filter.sortBy==='랜덤' ? '#f59e0b' : 'rgba(120,113,108,0.1)', color: filter.sortBy==='랜덤' ? 'white' : 'inherit', opacity: filter.sortBy==='랜덤' ? 1 : 0.6}}>
+                      <Shuffle size={16} className={isShuffling ? 'animate-spin' : ''} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main style={{maxWidth:'1600px', margin:'0 auto', padding:'0 1.5rem 8rem', boxSizing:'border-box'}}>
+            <div style={{padding:'clamp(1.5rem,4vw,4rem)', borderRadius:'3rem', borderLeft:'24px solid', borderRight:'24px solid', borderLeftColor: isDarkMode ? '#0a0705' : '#c0a08a', borderRightColor: isDarkMode ? '#0a0705' : '#c0a08a', borderTop:'none', borderBottom:'none', boxShadow:'0 40px 100px -20px rgba(0,0,0,0.3)', overflow:'hidden', transition:'background 0.5s', background: isDarkMode ? '#1a110a' : '#e5d3c5'}}>
+              {shelfRows.length > 0 ? shelfRows.map((row, rowIndex) => (
+                <div key={rowIndex} style={{marginBottom: rowIndex < shelfRows.length-1 ? '6rem' : 0}}>
+                  <div style={{display:'grid', gridTemplateColumns:'repeat(10, 1fr)', width:'100%'}}>
+                    {Array.from({length:10}).map((_,colIndex) => {
+                      const book = row[colIndex];
+                      if (!book) return <div key={`e-${rowIndex}-${colIndex}`} style={{aspectRatio:'1/2.8'}} />;
+                      const interaction = userInteractions[book.id];
+                      return (
+                        <div key={book.id} style={{display:'flex', flexDirection:'column', alignItems:'center', padding:'0 4px', position:'relative'}}>
+                          <div style={{width:'100%', aspectRatio:'1/2.8', position:'relative', display:'flex', alignItems:'flex-end'}}>
+                            <div
+                              onClick={() => setSelectedBook(book)}
+                              style={{
+                                width:'100%', height:'99%',
+                                background: getCategoryBg(book.category),
+                                cursor:'pointer', borderRadius:'4px 4px 0 0',
+                                transition:'transform 0.3s, filter 0.3s',
+                                boxShadow:'12px 0 24px -8px rgba(0,0,0,0.7)',
+                                borderRight:'1px solid rgba(255,255,255,0.2)',
+                                position:'relative', display:'flex',
+                                alignItems:'center', justifyContent:'center',
+                                overflow:'hidden', zIndex:10
+                              }}
+                              onMouseEnter={e => { e.currentTarget.style.transform='translateY(-3rem)'; e.currentTarget.style.filter='brightness(1.1)'; e.currentTarget.style.zIndex=20; }}
+                              onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.filter='brightness(1)'; e.currentTarget.style.zIndex=10; }}
+                            >
+                              <span style={{color:'white', fontSize:'clamp(6px,0.8vw,12px)', fontWeight:900, transform:'rotate(90deg)', letterSpacing:'-0.05em', textTransform:'uppercase', whiteSpace:'nowrap', opacity:0.85, textShadow:'0 2px 8px rgba(0,0,0,0.6)', padding:'0 4px', display:'block', maxWidth:'90%', overflow:'hidden', textOverflow:'ellipsis'}}>
+                                {book.title}
+                              </span>
+                              {interaction?.isRead && (
+                                <div style={{position:'absolute', top:0, right:'6px', width:'10px', height:'56px', background:'#dc2626', borderRadius:'0 0 9999px 9999px', display:'flex', alignItems:'flex-end', justifyContent:'center', paddingBottom:'6px', boxShadow:'0 2px 4px rgba(0,0,0,0.3)'}}>
+                                  <CheckCircle2 size={7} style={{color:'white'}} />
+                                </div>
+                              )}
+                              <div style={{position:'absolute', left:'8px', top:0, bottom:0, width:'1px', background:'rgba(255,255,255,0.1)'}} />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div style={{height:'2.5rem', width:'100%', background: isDarkMode ? '#2a1b11' : '#a68b7c', borderRadius:'2px', boxShadow:'0 20px 40px -10px rgba(0,0,0,0.5)', position:'relative'}}>
+                    <div style={{position:'absolute', top:'-8px', left:0, right:0, height:'8px', background:'rgba(0,0,0,0.6)', filter:'blur(3px)'}} />
+                    <div style={{position:'absolute', top:'8px', left:0, right:0, height:'3px', background:'rgba(255,255,255,0.1)'}} />
+                  </div>
+                </div>
+              )) : (
+                <div style={{padding:'5rem 0', textAlign:'center', opacity:0.3, display:'flex', flexDirection:'column', alignItems:'center', gap:'1rem'}}>
+                  <Search size={48} />
+                  <p style={{fontWeight:900, fontSize:'1.25rem', textTransform:'uppercase', letterSpacing:'-0.05em'}}>No Books Found</p>
+                </div>
+              )}
+            </div>
+          </main>
+
+          {/* Detail Modal */}
+          {selectedBook && (
+            <div style={{position:'fixed', inset:0, zIndex:50, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.5rem', background:'rgba(0,0,0,0.75)', backdropFilter:'blur(12px)'}}>
+              <div className="animate-zoom-in" style={{width:'100%', maxWidth:'28rem', borderRadius:'2.5rem', boxShadow:'0 25px 60px rgba(0,0,0,0.5)', overflow:'hidden', position:'relative', background: isDarkMode ? '#1c1917' : 'white', color: isDarkMode ? 'white' : '#1c1917'}}>
+                <button onClick={() => setSelectedBook(null)} style={{position:'absolute', top:'1.5rem', right:'1.5rem', padding:'0.5rem', borderRadius:'9999px', zIndex:20, border:'none', cursor:'pointer', background:'transparent', color: isDarkMode ? 'rgba(255,255,255,0.5)' : '#a8a29e'}}>
+                  <X size={20} />
+                </button>
+                <div style={{position:'relative', height:'12rem', overflow:'hidden'}}>
+                  <img src={selectedBook.imageUrl} style={{width:'100%', height:'100%', objectFit:'cover'}} alt="cover" />
+                  <div style={{position:'absolute', inset:0, background:'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.2) 50%, transparent 100%)'}} />
+                  <div style={{position:'absolute', bottom:'1.25rem', left:'1.5rem', display:'flex', alignItems:'center', gap:'0.75rem'}}>
+                    <span style={{padding:'0.25rem 0.625rem', borderRadius:'0.5rem', fontSize:'9px', fontWeight:900, color:'white', textTransform:'uppercase', letterSpacing:'0.1em', background: getCategoryBg(selectedBook.category)}}>
+                      {selectedBook.category}
+                    </span>
+                    <span style={{fontSize:'9px', fontWeight:700, color:'rgba(255,255,255,0.7)', textTransform:'uppercase', display:'flex', alignItems:'center', gap:'0.375rem'}}>
+                      <Clock size={12} /> {selectedBook.date}
+                    </span>
+                  </div>
+                </div>
+                <div style={{padding:'1.5rem 2rem 2rem', display:'flex', flexDirection:'column', gap:'1rem'}}>
+                  <h2 style={{fontSize:'1.5rem', fontWeight:900, letterSpacing:'-0.05em', lineHeight:1.2, margin:0}}>{selectedBook.title}</h2>
+                  <p style={{fontSize:'0.875rem', lineHeight:1.7, fontStyle:'italic', borderLeft:'4px solid rgba(245,158,11,0.3)', paddingLeft:'1rem', margin:0, color: isDarkMode ? '#a8a29e' : '#78716c'}}>
+                    "{selectedBook.summary}"
+                  </p>
+                  <div style={{paddingTop:'1rem', borderTop:'1px solid rgba(120,113,108,0.1)', display:'flex', flexDirection:'column', gap:'0.75rem'}}>
+                    <button
+                      onClick={() => updateInteraction(selectedBook.id, { isRead: !userInteractions[selectedBook.id]?.isRead })}
+                      style={{width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:'0.75rem', padding:'0.75rem', borderRadius:'1rem', fontSize:'12px', fontWeight:900, border:'none', cursor:'pointer', transition:'all 0.2s', background: userInteractions[selectedBook.id]?.isRead ? '#dc2626' : 'rgba(120,113,108,0.1)', color: userInteractions[selectedBook.id]?.isRead ? 'white' : '#78716c'}}
+                    >
+                      <CheckCircle2 size={16} /> {userInteractions[selectedBook.id]?.isRead ? '완독 완료 ✓' : '나도 읽었어요'}
+                    </button>
+                    {selectedBook.link && selectedBook.link !== '#' && (
+                      <a href={selectedBook.link} target="_blank" rel="noreferrer" style={{display:'flex', alignItems:'center', justifyContent:'center', gap:'0.5rem', width:'100%', background:'#f59e0b', color:'white', fontWeight:900, padding:'1rem', borderRadius:'1rem', textDecoration:'none', fontSize:'12px', textTransform:'uppercase', letterSpacing:'0.1em', boxShadow:'0 10px 30px -5px rgba(245,158,11,0.4)'}}>
+                        작품 바로가기 <ExternalLink size={16} />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <footer style={{padding:'5rem 0', textAlign:'center', opacity:0.1, fontSize:'9px', fontWeight:900, textTransform:'uppercase', letterSpacing:'0.4em'}}>
+            Grand Shelf Archive &bull; Est. 2024
+          </footer>
+        </div>
+      );
+    };
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

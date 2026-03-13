@@ -1,0 +1,2078 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storium</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       CONFIG & TOKENS
+       ============================================================ */
+    :root {
+      --bg:          #faf8f4;
+      --bg-2:        #f2ede6;
+      --surface:     #ffffff;
+      --border:      rgba(120,100,80,0.15);
+      --border-2:    rgba(120,100,80,0.25);
+      --text-1:      #1a1612;
+      --text-2:      #6b5e52;
+      --text-3:      #a8998e;
+      --accent:      #d97706;
+      --accent-bg:   rgba(217,119,6,0.1);
+      --accent-2:    #f59e0b;
+      --danger:      #dc2626;
+      --shelf-wood:  #c0a08a;
+      --shelf-bg:    #e8d5c4;
+      --shelf-plank: #a68b7c;
+      --shelf-border:#b8956e;
+      --radius-sm:   8px;
+      --radius-md:   14px;
+      --radius-lg:   24px;
+      --radius-xl:   40px;
+      --shadow-book: 10px 0 22px -6px rgba(0,0,0,0.6);
+      --shadow-modal:0 32px 80px rgba(0,0,0,0.35);
+      --font-display:'Playfair Display', Georgia, serif;
+      --font-body:   'Noto Sans KR', sans-serif;
+      --transition:  0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    .dark {
+      --bg:          #0d0a08;
+      --bg-2:        #160f0a;
+      --surface:     #1e1510;
+      --border:      rgba(255,220,180,0.08);
+      --border-2:    rgba(255,220,180,0.14);
+      --text-1:      #fdf6ec;
+      --text-2:      #c4a882;
+      --text-3:      #7a6555;
+      --shelf-bg:    #1e1208;
+      --shelf-plank: #2e1c0f;
+      --shelf-border:#0d0a08;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text-1);
+      transition: background var(--transition), color var(--transition);
+      min-height: 100vh;
+    }
+
+    .page { min-height: 100vh; }
+    .container { max-width: 1500px; margin: 0 auto; padding: 0 3.5rem; }
+    .shelf-container { max-width: 1500px; margin: 0 auto; padding: 0 3.5rem 6rem; }
+
+    /* HEADER */
+    .header { padding: 2.5rem 0 0; animation: fadeDown 0.6s ease both; }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .header-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.75rem;
+    }
+    .brand-tagline {
+      font-family: var(--font-display);
+      font-size: 13px; font-weight: 400; font-style: italic;
+      color: var(--text-2); letter-spacing: 0.01em;
+      margin-top: 0.5rem; margin-bottom: 0.75rem;
+      line-height: 1.6; max-width: 38rem;
+    }
+    .brand-tagline::before, .brand-tagline::after { display: none; }
+    .brand h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900; letter-spacing: 0.04em;
+      display: flex; align-items: center; gap: 0.625rem; line-height: 1;
+      color: var(--accent);
+      text-transform: uppercase;
+    }
+    .brand-icon {
+      color: var(--accent); flex-shrink: 0;
+      opacity: 0.85;
+    }
+    .brand-meta {
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 0.625rem; margin-top: 0.875rem;
+    }
+    .user-chip {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 13px; font-weight: 700; color: var(--text-1);
+    }
+    .user-chip .chip-icon {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: transform var(--transition), opacity var(--transition);
+    }
+    .user-chip .chip-icon:hover { transform: scale(1.1); opacity: 0.85; }
+    .user-chip .chip-label { color: var(--text-1); font-weight: 700; }
+    .user-chip .chip-label em { font-style: normal; color: var(--accent); }
+    .chip-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--border-2); }
+    .stat-chip {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 12px; font-weight: 700; color: var(--text-2);
+    }
+    .stat-chip svg { color: var(--accent-2); }
+
+    /* CONTROLS */
+    .controls {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      padding: 0.5rem; background: var(--bg-2);
+      border: 0.5px solid var(--border); border-radius: var(--radius-md);
+    }
+    .search-wrap { position: relative; }
+    .search-icon {
+      position: absolute; left: 0.625rem; top: 50%; transform: translateY(-50%);
+      color: var(--text-3); pointer-events: none;
+    }
+    .search-input {
+      padding: 0.45rem 0.75rem 0.45rem 2.1rem;
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body);
+      color: var(--text-1); outline: none; width: 180px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .search-input::placeholder { color: var(--text-3); }
+    .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .icon-btn {
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+      cursor: pointer; color: var(--text-2); transition: background var(--transition), color var(--transition);
+    }
+    .icon-btn:hover { background: var(--bg-2); color: var(--text-1); }
+    .icon-btn.active { background: var(--accent-2); color: white; border-color: var(--accent); }
+
+    /* FILTER BAR */
+    .filter-bar {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+      display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto auto;
+      gap: 1.25rem 1.75rem;
+      animation: fadeUp 0.5s 0.1s ease both;
+    }
+    .filter-group-genre { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; gap: 0.6rem; }
+    .filter-secondary-row { grid-column: 1; grid-row: 2; display: flex; gap: 1.75rem; flex-wrap: wrap; }
+    .filter-footer-row { grid-column: 1 / -1; grid-row: 3; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 0.6rem; }
+    .filter-label {
+      font-size: 9px; font-weight: 900; text-transform: uppercase;
+      letter-spacing: 0.18em; color: var(--text-3);
+    }
+    .filter-pills { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+    .pill {
+      padding: 0.3rem 0.75rem; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 700; font-family: var(--font-body);
+      border: 0.5px solid transparent; cursor: pointer;
+      background: transparent; color: var(--text-2); opacity: 0.55;
+      transition: all var(--transition);
+    }
+    .pill:hover { opacity: 0.9; background: var(--bg-2); }
+    .pill.active {
+      background: #fde68a; color: #1a1612; opacity: 1;
+      border-color: #f6c94e; transform: scale(1.04);
+    }
+    .dark .pill.active { background: #92400e; color: #fef3c7; border-color: #b45309; }
+
+    .sort-group {
+      grid-column: 2; grid-row: 1 / span 2;
+      display: flex; flex-direction: column; justify-content: space-between;
+      border-left: 0.5px solid var(--border); padding-left: 1.75rem;
+    }
+    .sort-row { display: flex; align-items: center; gap: 0.75rem; }
+    .sort-toggle {
+      display: flex; gap: 2px; padding: 3px;
+      background: var(--bg-2); border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    }
+    .sort-btn {
+      padding: 0.3rem 0.875rem; border-radius: 6px; font-size: 11px; font-weight: 700;
+      font-family: var(--font-body); border: none; cursor: pointer;
+      background: transparent; color: var(--text-2); opacity: 0.5;
+      transition: all var(--transition);
+    }
+    .sort-btn.active { background: var(--surface); color: var(--accent); opacity: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .dark .sort-btn.active { background: #292524; }
+
+    .shuffle-btn {
+      display: flex; align-items: center; gap: 0.375rem;
+      padding: 0.4rem 0.875rem; border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 900; font-family: var(--font-body);
+      border: 0.5px solid var(--border); cursor: pointer;
+      background: var(--bg-2); color: var(--text-2); opacity: 0.6;
+      transition: all var(--transition);
+    }
+    .shuffle-btn:hover { opacity: 1; }
+    .shuffle-btn.active { background: var(--accent-2); color: white; border-color: var(--accent); opacity: 1; }
+
+    .filter-footer {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding-top: 0.875rem; border-top: 0.5px solid var(--border); margin-top: 0.25rem;
+    }
+    .result-count { font-size: 12px; color: var(--text-3); font-weight: 500; }
+    .result-count strong { color: var(--accent); font-weight: 700; }
+    .reset-btn {
+      font-size: 11px; font-weight: 700; font-family: var(--font-body);
+      color: var(--text-3); background: none; border: none; cursor: pointer;
+      padding: 0.2rem 0.5rem; border-radius: var(--radius-sm);
+      transition: color var(--transition);
+    }
+    .reset-btn:hover { color: var(--danger); }
+
+    /* SHELF */
+    .shelf-box {
+      background: var(--shelf-bg);
+      border-left: 22px solid var(--shelf-border);
+      border-right: 22px solid var(--shelf-border);
+      border-top: none; border-bottom: none;
+      border-radius: var(--radius-xl);
+      padding: 2.5rem 2rem; overflow: visible;
+      box-shadow: 0 40px 100px -20px rgba(0,0,0,0.25);
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+    .shelf-row { margin-bottom: 5rem; }
+    .shelf-row:last-child { margin-bottom: 0; }
+    .books-grid {
+      display: grid; grid-template-columns: repeat(var(--cols, 10), 1fr);
+      transform: perspective(2400px) rotateY(-10deg);
+      transform-origin: left center;
+      transform-style: preserve-3d;
+    }
+    .book-slot { padding: 0 3px; position: relative; }
+    /* 빈 슬롯 높이 유지 */
+    .book-spacer { display: block; width: 100%; aspect-ratio: 1 / 5.6; }
+    .book-3d {
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1), filter 0.2s ease;
+    }
+    .book-slot.hovered .book-3d {
+      transform: translateY(-2.75rem) scale(1.04) rotateY(10deg);
+      filter: brightness(1.18);
+      z-index: 20;
+    }
+
+    /* 책 위쪽 페이지 뭉탱이 */
+    .book-pages-top {
+      position: absolute; top: -5px; left: 2px; right: 2px; height: 6px;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(250,245,230,0.95) 0px, rgba(250,245,230,0.95) 1px,
+        rgba(180,160,130,0.35) 1px, rgba(180,160,130,0.35) 1.8px
+      );
+      border-radius: 2px 2px 0 0;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.18);
+      z-index: 5; pointer-events: none;
+    }
+
+    .book-spine {
+      width: 100%; aspect-ratio: 1 / 5.6; border-radius: 2px 4px 0 0;
+      cursor: pointer; position: relative; display: flex; align-items: center;
+      justify-content: center; overflow: hidden;
+      transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1), filter 0.2s ease;
+      box-shadow:
+        inset 5px 0 10px rgba(0,0,0,0.28),
+        inset -1px 0 0 rgba(255,255,255,0.1),
+        4px 6px 16px rgba(0,0,0,0.28);
+    }
+    .book-spine::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(
+        to right,
+        rgba(0,0,0,0.18) 0%,
+        transparent 28%,
+        rgba(255,255,255,0.04) 65%,
+        rgba(0,0,0,0.06) 100%
+      );
+      pointer-events: none; z-index: 1;
+    }
+    /* 표지 면 — spine 오른쪽에 수직으로 붙은 앞면 */
+    .book-cover-face {
+      position: absolute; top: 5px; right: 0; bottom: 0;
+      width: 70px;
+      transform-origin: right center;
+      transform: rotateY(90deg);
+      overflow: hidden;
+      border-radius: 0 3px 3px 0;
+      backface-visibility: visible;
+      pointer-events: none;
+    }
+    .book-cover-face img { width: 100%; height: 100%; object-fit: cover; object-position: left; display: block; }
+
+    .book-title-text {
+      writing-mode: vertical-lr; transform: none;
+      font-size: clamp(11px, 1.5vw, 17px); font-weight: 900;
+      color: rgba(255,255,255,0.95); text-transform: uppercase;
+      letter-spacing: 0.05em; white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; max-height: 90%; padding: 4px 3px;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.7); font-family: var(--font-body);
+    }
+    /* 읽음 — 책 상단 빨간 선 */
+    .read-ribbon {
+      position: absolute; top: 0; left: 0; right: 0;
+      height: 8px; background: #ef4444;
+      z-index: 10;
+    }
+
+    /* hover preview — 흰 카드 */
+    .book-preview {
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      transform-origin: bottom center;
+      width: 158px;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10), 0 0 0 1px rgba(0,0,0,0.06);
+      z-index: 100;
+      pointer-events: none;
+      opacity: 0;
+      cursor: pointer;
+      transition: opacity 0.18s ease, transform 0.22s ease;
+      white-space: normal;
+    }
+    .book-slot.hovered .book-preview {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+    .preview-img-wrap { padding: 9px 9px 0; }
+    .preview-img { width: 100%; aspect-ratio: 3/4; object-fit: cover; display: block; border-radius: 5px; }
+    .preview-info {
+      padding: 8px 10px 10px;
+      background: #fff;
+    }
+    .preview-title {
+      font-size: 12px; font-weight: 700; color: #111; line-height: 1.4;
+      overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+      margin-bottom: 5px;
+    }
+    .preview-cat {
+      display: inline-block;
+      font-size: 10px; font-weight: 700; color: #92400e;
+      background: #fef3c7;
+      padding: 2px 7px; border-radius: 99px;
+      letter-spacing: 0.04em;
+    }
+    .dark .book-preview { background: #1c1917; box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.07); }
+    .dark .preview-info { background: #1c1917; }
+    .dark .preview-title { color: #f5f5f4; }
+    .dark .preview-cat { background: #292524; color: #fbbf24; }
+
+    .shelf-plank {
+      height: 2.25rem; background: var(--shelf-plank); border-radius: 2px;
+      position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .shelf-plank::before {
+      content: ''; position: absolute; top: -8px; left: 0; right: 0;
+      height: 8px; background: rgba(0,0,0,0.45); filter: blur(4px);
+    }
+    .shelf-plank::after {
+      content: ''; position: absolute; top: 7px; left: 0; right: 0;
+      height: 2px; background: rgba(255,255,255,0.08);
+    }
+
+    .empty-state {
+      padding: 5rem 0; text-align: center; color: var(--text-3);
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+    }
+    .empty-state p { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
+
+    /* LOADER */
+    .loader {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 5rem; gap: 1rem; color: var(--text-3);
+    }
+    .loader p { font-size: 13px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 0.9s linear infinite; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+      background: rgba(0,0,0,0.68); backdrop-filter: blur(14px);
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal {
+      width: 100%; max-width: 26rem; border-radius: var(--radius-lg);
+      background: var(--surface); color: var(--text-1); overflow: hidden;
+      position: relative; box-shadow: var(--shadow-modal);
+      animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes modalIn {
+      from { transform: scale(0.9) translateY(12px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .modal-close {
+      position: absolute; top: 0.875rem; right: 0.875rem; z-index: 10;
+      width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(0,0,0,0.28); color: white;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition);
+    }
+    .modal-close:hover { background: rgba(0,0,0,0.5); }
+    .modal-cover { position: relative; }
+    .modal-img { width: 100%; height: 11rem; object-fit: cover; display: block; }
+    .modal-img-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 55%, transparent 100%);
+    }
+    .modal-meta {
+      position: absolute; bottom: 1rem; left: 1.25rem; right: 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-cat {
+      font-size: 9px; font-weight: 900; color: white; text-transform: uppercase;
+      letter-spacing: 0.12em; padding: 0.25rem 0.6rem; border-radius: 6px;
+    }
+    .modal-date { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.65); }
+    .modal-body { padding: 1.25rem 1.5rem 1.5rem; }
+    .modal-title {
+      font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
+      letter-spacing: -0.02em; line-height: 1.2;
+    }
+    .modal-summary {
+      font-size: 13px; line-height: 1.75; font-style: italic;
+      border-left: 3px solid var(--accent-bg); padding-left: 0.875rem;
+      color: var(--text-2); margin-bottom: 1.25rem;
+    }
+    .modal-divider { height: 0.5px; background: var(--border); margin-bottom: 1rem; }
+    .modal-actions { display: flex; flex-direction: column; gap: 0.625rem; margin-bottom: 0.75rem; }
+    .btn-read {
+      width: 100%; padding: 0.8rem; border-radius: var(--radius-md);
+      font-size: 12px; font-weight: 900; font-family: var(--font-body);
+      border: 0.5px solid var(--border); cursor: pointer;
+      transition: all var(--transition);
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      background: var(--bg-2); color: var(--text-2);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .btn-read:hover { background: var(--bg); }
+    .btn-read.done { background: var(--danger); color: white; border-color: transparent; box-shadow: 0 4px 16px rgba(220,38,38,0.3); }
+    .btn-link-wrap { margin-top: 0.75rem; }
+
+    /* 읽었어요 + 작품 바로가기 한 줄 */
+    .modal-action-row { display: flex; gap: 0.5rem; align-items: stretch; margin-bottom: 0.625rem; }
+    .modal-action-row .btn-read { flex: 1; margin: 0; }
+    .btn-link-inline {
+      flex: 1; padding: 0.8rem 1rem;
+      border-radius: var(--radius-md); font-size: 12px; font-weight: 900; font-family: var(--font-body);
+      border: none; cursor: pointer; background: var(--accent-2); color: white;
+      text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      box-shadow: 0 4px 14px rgba(245,158,11,0.3);
+      transition: background var(--transition), transform var(--transition);
+    }
+    .btn-link-inline:hover { background: var(--accent); transform: translateY(-1px); }
+    .btn-link {
+      width: 100%; padding: 0.875rem; border-radius: var(--radius-md);
+      font-size: 12px; font-weight: 900; font-family: var(--font-body);
+      border: none; cursor: pointer; background: var(--accent-2); color: white;
+      text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      box-shadow: 0 6px 20px rgba(245,158,11,0.35);
+      transition: background var(--transition), transform var(--transition);
+    }
+    .btn-link:hover { background: var(--accent); transform: translateY(-1px); }
+
+    .footer {
+      padding: 3rem 0; text-align: center; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.3em; color: var(--text-3); opacity: 0.4;
+    }
+
+    /* 댓글 시트 */
+    .comment-sheet-overlay {
+      position: fixed; inset: 0; z-index: 250;
+      display: flex; align-items: flex-end; justify-content: center;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+      animation: fadeIn 0.2s ease;
+    }
+    .comment-sheet {
+      width: 100%; max-width: 28rem; max-height: 72vh;
+      background: var(--surface); color: var(--text-1);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      padding: 1.25rem 1.5rem 2rem;
+      overflow-y: auto;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.25);
+      animation: slideUp 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(60px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+    .comment-sheet-header {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.25rem;
+    }
+    .comment-sheet-title { font-size: 13px; font-weight: 900; color: var(--text-1); display: flex; align-items: center; gap: 0.4rem; }
+    .comment-sheet-close {
+      background: none; border: none; cursor: pointer;
+      font-size: 15px; color: var(--text-3); padding: 0; line-height: 1;
+      transition: color var(--transition);
+    }
+    .comment-sheet-close:hover { color: var(--text-1); }
+    .comment-sheet-book { font-size: 12px; color: var(--text-3); margin-bottom: 1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .comment-open-btn {
+      width: 100%; padding: 0.65rem; margin-top: 0.75rem;
+      border-radius: var(--radius-md); font-size: 12px; font-weight: 700; font-family: var(--font-body);
+      border: 0.5px solid var(--border); cursor: pointer;
+      background: var(--bg-2); color: var(--text-2);
+      display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+      transition: all var(--transition);
+    }
+    .comment-open-btn:hover { background: var(--surface); color: var(--text-1); border-color: var(--border-2); }
+
+    /* AUTH BUTTON */
+    .auth-btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 900; font-family: var(--font-body);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      border: 0.5px solid var(--border); cursor: pointer;
+      transition: all var(--transition);
+    }
+    .auth-btn.signin { background: var(--accent-2); color: white; border-color: var(--accent); box-shadow: 0 3px 10px rgba(245,158,11,0.3); }
+    .auth-btn.signin:hover { background: var(--accent); }
+    .auth-btn.signout { background: var(--bg-2); color: var(--text-2); }
+    .auth-btn.signout:hover { background: var(--bg); color: var(--danger); border-color: var(--danger); }
+
+    /* AUTH MODAL */
+    .auth-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(16px);
+      animation: fadeIn 0.2s ease;
+    }
+    .auth-modal {
+      width: 100%; max-width: 22rem;
+      background: var(--surface); color: var(--text-1);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2rem 2rem;
+      position: relative; box-shadow: var(--shadow-modal);
+      animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .auth-modal h2 { font-family: var(--font-display); font-size: 1.75rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 0.3rem; }
+    .auth-modal .auth-subtitle { font-size: 12px; color: var(--text-3); margin-bottom: 1.5rem; }
+    .auth-field { display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 0.875rem; }
+    .auth-field label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-3); }
+    .auth-field input {
+      padding: 0.75rem 1rem; background: var(--bg-2); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 14px; font-family: var(--font-body);
+      color: var(--text-1); outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .auth-field input::placeholder { color: var(--text-3); }
+    .auth-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .auth-submit {
+      width: 100%; padding: 0.875rem; margin-top: 0.5rem;
+      border-radius: var(--radius-md); font-size: 13px; font-weight: 900;
+      font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.08em;
+      border: none; cursor: pointer; background: var(--accent-2); color: white;
+      box-shadow: 0 6px 20px rgba(245,158,11,0.35);
+      transition: background var(--transition), transform var(--transition);
+    }
+    .auth-submit:hover { background: var(--accent); transform: translateY(-1px); }
+    .auth-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .auth-error { font-size: 12px; color: var(--danger); margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(220,38,38,0.08); border-radius: var(--radius-sm); display: none; }
+    .auth-error.show { display: block; }
+    .auth-divider { height: 0.5px; background: var(--border); margin: 1.25rem 0; }
+    .auth-switch { text-align: center; font-size: 12px; color: var(--text-3); }
+    .auth-switch button { background: none; border: none; cursor: pointer; color: var(--accent); font-weight: 700; font-family: var(--font-body); font-size: 12px; padding: 0; text-decoration: underline; }
+    .google-btn {
+      width: 100%; padding: 0.75rem; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 700; font-family: var(--font-body);
+      border: 0.5px solid var(--border-2); cursor: pointer;
+      background: var(--surface); color: var(--text-1);
+      display: flex; align-items: center; justify-content: center; gap: 0.625rem;
+      transition: background var(--transition), box-shadow var(--transition);
+    }
+    .google-btn:hover { background: var(--bg-2); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .auth-or {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin: 1rem 0 0.75rem; color: var(--text-3); font-size: 11px;
+    }
+    .auth-or::before, .auth-or::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+    .anon-btn {
+      width: 100%; padding: 0.6rem; margin-top: 0.5rem;
+      border-radius: var(--radius-md); font-size: 11px; font-weight: 700;
+      font-family: var(--font-body); border: 0.5px solid var(--border);
+      cursor: pointer; background: transparent; color: var(--text-3);
+      transition: all var(--transition);
+    }
+    .anon-btn:hover { color: var(--text-1); background: var(--bg-2); }
+
+    /* REACTION */
+    .reaction-wrap {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.5rem 0; margin: 0.25rem 0;
+    }
+    .reaction-label { font-size: 11px; font-weight: 700; color: var(--text-3); white-space: nowrap; }
+    .reaction-btns { display: flex; gap: 0.5rem; }
+    .reaction-btn {
+      padding: 0.4rem 0.9rem; border-radius: 99px;
+      font-size: 12px; font-weight: 700; font-family: var(--font-body);
+      border: 0.5px solid var(--border-2); cursor: pointer;
+      background: var(--surface); color: var(--text-2);
+      transition: all var(--transition);
+    }
+    .reaction-btn:hover { transform: scale(1.06); }
+    .reaction-btn.like.active  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+    .reaction-btn.dislike.active { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .dark .reaction-btn.like.active  { background: #064e3b; color: #6ee7b7; border-color: #065f46; }
+    .dark .reaction-btn.dislike.active { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
+
+    /* 탭 통합 섹션 */
+    .note-section { margin-top: 0.875rem; border-top: 0.5px solid var(--border); padding-top: 0.875rem; }
+    .note-tabs { display: flex; gap: 0.375rem; margin-bottom: 0.875rem; }
+    .note-tab {
+      padding: 0.35rem 0.8rem; border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 700; font-family: var(--font-body);
+      border: 0.5px solid var(--border); cursor: pointer;
+      background: transparent; color: var(--text-3);
+      transition: all var(--transition); display: flex; align-items: center; gap: 0.3rem;
+    }
+    .note-tab.active { background: var(--surface); color: var(--text-1); border-color: var(--border-2); box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+    .note-count { background: var(--accent-bg); color: var(--accent); font-size: 10px; font-weight: 900; padding: 1px 5px; border-radius: 99px; }
+
+    /* COMMENTS */
+    .comments-title {
+      font-size: 11px; font-weight: 900; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--text-3);
+      display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.75rem;
+    }
+    .comments-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; max-height: 220px; overflow-y: auto; }
+    .comment-empty { font-size: 12px; color: var(--text-3); text-align: center; padding: 1rem 0; }
+    .comment-item {
+      background: var(--bg-2); border-radius: var(--radius-sm);
+      padding: 0.625rem 0.75rem; border: 0.5px solid var(--border);
+    }
+    .comment-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+    .comment-nick { font-size: 11px; font-weight: 900; color: var(--accent); }
+    .comment-time { font-size: 10px; color: var(--text-3); margin-left: auto; }
+    .comment-del {
+      font-size: 10px; background: none; border: none; cursor: pointer;
+      color: var(--text-3); padding: 0; transition: color var(--transition);
+    }
+    .comment-del:hover { color: var(--danger); }
+    .comment-text { font-size: 13px; color: var(--text-1); line-height: 1.5; }
+    .comment-input-wrap { display: flex; gap: 0.5rem; }
+    .comment-input {
+      flex: 1; padding: 0.6rem 0.875rem;
+      background: var(--bg-2); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body);
+      color: var(--text-1); outline: none;
+      transition: border-color var(--transition);
+    }
+    .comment-input:focus { border-color: var(--accent); }
+    .comment-input::placeholder { color: var(--text-3); }
+    .comment-submit {
+      padding: 0.6rem 1rem; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 900; font-family: var(--font-body);
+      border: none; cursor: pointer; background: var(--accent-2); color: white;
+      transition: background var(--transition);
+      white-space: nowrap;
+    }
+    .comment-submit:hover { background: var(--accent); }
+    .comment-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .comment-login-hint { font-size: 12px; color: var(--text-3); text-align: center; padding: 0.5rem 0; }
+
+    @media (max-width: 900px) {
+      .container, .shelf-container { padding-left: 1rem; padding-right: 1rem; }
+      .shelf-box { padding: 1.25rem 0.75rem; border-left-width: 12px; border-right-width: 12px; border-radius: 1.5rem; }
+      .filter-bar { grid-template-columns: 1fr; }
+      .sort-group { grid-column: 1; grid-row: auto; border-left: none; padding-left: 0; }
+      .controls { width: 100%; }
+      .search-input { width: 140px; }
+      .book-preview { display: none; }
+      .book-title-text { font-size: clamp(9px, 3vw, 14px); }
+    }
+    @media (max-width: 480px) {
+      .container, .shelf-container { padding-left: 0.75rem; padding-right: 0.75rem; }
+      .book-title-text { font-size: clamp(7px, 2.5vw, 11px); }
+      .shelf-row { margin-bottom: 3.5rem; }
+    }
+
+    /* 통계 패널 */
+    .stats-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+      background: rgba(0,0,0,0.68); backdrop-filter: blur(14px);
+      animation: fadeIn 0.2s ease;
+    }
+    .stats-panel {
+      width: 100%; max-width: 32rem; max-height: 88vh; overflow-y: auto;
+      border-radius: var(--radius-lg); background: var(--surface); color: var(--text-1);
+      box-shadow: var(--shadow-modal); animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1);
+      padding: 2rem;
+    }
+    .stats-panel h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 900; margin-bottom: 1.5rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+    .stats-card {
+      background: var(--bg-2); border-radius: var(--radius-md);
+      padding: 1rem; border: 0.5px solid var(--border); text-align: center;
+    }
+    .stats-card .val { font-size: 1.75rem; font-weight: 900; color: var(--accent); font-family: var(--font-display); }
+    .stats-card .lbl { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); margin-top: 0.25rem; }
+    .stats-section-title {
+      font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em;
+      color: var(--text-3); margin: 1.25rem 0 0.75rem;
+    }
+    .chart-bar-wrap { display: flex; flex-direction: column; gap: 0.5rem; }
+    .chart-bar-row { display: flex; align-items: center; gap: 0.75rem; }
+    .chart-bar-label { font-size: 12px; font-weight: 700; color: var(--text-2); width: 4rem; text-align: right; flex-shrink: 0; }
+    .chart-bar-track { flex: 1; height: 10px; background: var(--bg-2); border-radius: 99px; overflow: hidden; }
+    .chart-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; background: var(--accent-2); }
+    .chart-bar-count { font-size: 11px; font-weight: 700; color: var(--text-3); width: 2rem; }
+    .monthly-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.375rem; }
+    .month-col { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+    .month-bar-wrap { width: 100%; height: 60px; display: flex; align-items: flex-end; }
+    .month-bar { width: 100%; border-radius: 3px 3px 0 0; background: var(--accent-2); transition: height 0.5s ease; min-height: 2px; }
+    .month-label { font-size: 9px; color: var(--text-3); font-weight: 700; }
+    .month-count { font-size: 10px; color: var(--accent); font-weight: 900; }
+    .reaction-summary { display: flex; gap: 1rem; }
+    .rxn-box {
+      flex: 1; background: var(--bg-2); border-radius: var(--radius-md);
+      padding: 1rem; border: 0.5px solid var(--border); text-align: center;
+    }
+    .rxn-emoji { font-size: 1.75rem; }
+    .rxn-count { font-size: 1.25rem; font-weight: 900; color: var(--accent); margin-top: 0.25rem; }
+    .rxn-lbl { font-size: 10px; color: var(--text-3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+
+    /* 랭킹 패널 — 2열 */
+    .rank-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    .rank-col { display: flex; flex-direction: column; gap: 0.55rem; }
+    .rank-col-title {
+      font-size: 13px; font-weight: 900; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--text-3); margin-bottom: 0.375rem;
+    }
+    .rank-row {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.75rem 0.875rem; background: var(--bg-2);
+      border-radius: var(--radius-sm); border: 0.5px solid var(--border);
+    }
+    .rank-medal { font-size: 1.4rem; flex-shrink: 0; line-height: 1; }
+    .rank-thumb { width: 38px; height: 56px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: var(--border); }
+    .rank-info { flex: 1; min-width: 0; }
+    .rank-name { font-size: 15px; font-weight: 700; color: var(--text-1); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .rank-cnt { font-size: 13px; font-weight: 900; color: var(--accent); margin-top: 2px; }
+    .rank-empty { font-size: 13px; color: var(--text-3); text-align: center; padding: 1rem 0; }
+
+    /* 새책 배지 */
+    .new-badge {
+      position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+      background: #6366f1; color: white; font-size: 8px; font-weight: 900;
+      letter-spacing: 0.08em; padding: 1px 5px; border-radius: 3px;
+      z-index: 30; pointer-events: none; text-transform: uppercase;
+    }
+
+    /* 찜 — 우상단 클립 */
+    .bookmark-ribbon {
+      position: absolute; top: 0; right: 6px;
+      width: 13px; height: 22px;
+      background: linear-gradient(to bottom, #fde68a, #f59e0b);
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.45);
+      z-index: 20;
+    }
+    .bookmark-ribbon::before {
+      content: '';
+      position: absolute; top: 5px; left: 50%; transform: translateX(-50%);
+      width: 6px; height: 8px;
+      border: 2px solid rgba(0,0,0,0.18); border-radius: 1px;
+    }
+
+    /* 메모 */
+    .memo-wrap { margin-top: 0.75rem; }
+    .memo-label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-3); margin-bottom: 0.375rem; display: flex; align-items: center; gap: 0.375rem; }
+    .memo-lock { font-size: 9px; color: var(--text-3); }
+    .memo-textarea {
+      width: 100%; min-height: 72px; padding: 0.625rem 0.75rem; resize: vertical;
+      background: var(--bg-2); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body);
+      color: var(--text-1); outline: none; line-height: 1.5;
+      transition: border-color var(--transition);
+      box-sizing: border-box;
+    }
+    .memo-textarea:focus { border-color: var(--accent); }
+    .memo-textarea::placeholder { color: var(--text-3); }
+    .memo-save-btn {
+      margin-top: 0.375rem; padding: 0.4rem 0.875rem;
+      font-size: 11px; font-weight: 900; font-family: var(--font-body);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      background: var(--bg-2); color: var(--text-2);
+      border: 0.5px solid var(--border); border-radius: var(--radius-sm); cursor: pointer;
+      transition: all var(--transition);
+    }
+    .memo-save-btn:hover { background: var(--accent-2); color: white; border-color: transparent; }
+    .memo-saved { font-size: 11px; color: #10b981; font-weight: 700; margin-left: 0.5rem; opacity: 0; transition: opacity 0.3s; }
+    .memo-saved.show { opacity: 1; }
+
+    /* 찜 아이콘 버튼 (제목 옆) */
+    .btn-bookmark-icon {
+      width: 30px; height: 30px; border-radius: 50%; border: 0.5px solid var(--border-2);
+      cursor: pointer; flex-shrink: 0; margin-top: 0.2rem;
+      background: var(--bg-2); color: var(--text-3);
+      display: flex; align-items: center; justify-content: center;
+      transition: all var(--transition);
+    }
+    .btn-bookmark-icon:hover { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; transform: scale(1.08); }
+    .btn-bookmark-icon.active { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+    .dark .btn-bookmark-icon:hover,
+    .dark .btn-bookmark-icon.active { background: #1e3a5f; color: #93c5fd; border-color: #1d4ed8; }
+
+    /* 반응 카운트: 표지 상단 오버레이 */
+    .modal-stats-top {
+      position: absolute; top: 0.75rem; left: 1rem;
+      display: flex; align-items: center; gap: 0.375rem; z-index: 5;
+    }
+    .modal-stat {
+      font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.9);
+      background: rgba(0,0,0,0.38); backdrop-filter: blur(6px);
+      padding: 0.2rem 0.55rem; border-radius: 99px; letter-spacing: 0.02em;
+    }
+
+    /* 사진 없을 때 반응 카운트 */
+    .modal-stats-nophoto { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+    .modal-stat-np {
+      font-size: 11px; font-weight: 700; color: var(--text-3);
+      background: var(--bg-2); border: 0.5px solid var(--border);
+      padding: 0.2rem 0.55rem; border-radius: 99px;
+    }
+
+    /* 제목 + 찜 아이콘 정렬 */
+    .modal-title-row {
+      display: flex; align-items: flex-start;
+      justify-content: space-between; gap: 0.75rem;
+      margin-bottom: 0.875rem;
+    }
+    .modal-title-row .modal-title { margin-bottom: 0; flex: 1; }
+
+    /* 필터 찜보기 버튼 */
+    .bookmark-filter-btn {
+      padding: 0.35rem 0.75rem; border-radius: 99px;
+      font-size: 11px; font-weight: 700; font-family: var(--font-body);
+      border: 0.5px solid var(--border); cursor: pointer;
+      background: var(--bg-2); color: var(--text-2);
+      transition: all var(--transition);
+      display: flex; align-items: center; gap: 0.3rem;
+    }
+    .bookmark-filter-btn.active { background: #eff6ff; color: #1d4ed8; border-color: #93c5fd; }
+    .dark .bookmark-filter-btn.active { background: #1e3a5f; color: #93c5fd; border-color: #1d4ed8; }
+
+    /* 네비 버튼 (통계/랭킹) */
+    .nav-btn {
+      padding: 0.4rem 0.75rem; border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 900; font-family: var(--font-body);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      border: 0.5px solid var(--border); cursor: pointer;
+      background: var(--bg-2); color: var(--text-2);
+      transition: all var(--transition);
+    }
+    .nav-btn:hover { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     CONFIGURATION — 이 값들만 수정하면 됩니다
+     ============================================================ -->
+<script>
+const CONFIG = {
+  sheetUrl:       "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3pGwZSM-xiNIE79HRbOW_E4ldgeOy9MtWNzzoZB6ma7ksrjRugeM055ME2xKO7xzp84cG7VgOoaEq/pub?gid=0&single=true&output=csv",
+  storageKey:     "storium-v1",
+  booksPerRow:    10,
+  genres:         ['전체', '모험', '판타지', 'SF', '요리', '인문'],
+  ages:           ['전체', '아동', '청소년', '성인'],
+  catColors: {
+    '모험':  '#b45309',
+    '판타지':'#6d28d9',
+    'SF':    '#1d4ed8',
+    '요리':  '#047857',
+    '인문':  '#be123c',
+  },
+  defaultCatColor: '#374151',
+  spinepalette: ['#1e40af','#7c3aed','#b45309','#0f766e','#9f1239','#3d6b40','#92400e','#0369a1','#5b21b6','#065f46','#831843','#7c2d12','#374151','#0c4a6e','#4d7c0f'],
+};
+</script>
+
+<div class="page" id="app">
+  <div class="container">
+    <div class="header">
+      <div class="header-top">
+        <div class="brand">
+          <h1>
+            <svg class="brand-icon" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              <line x1="6" y1="8" x2="8" y2="8"/>
+              <line x1="6" y1="12" x2="8" y2="12"/>
+              <line x1="16" y1="8" x2="18" y2="8"/>
+              <line x1="16" y1="12" x2="18" y2="12"/>
+            </svg>
+            Storium
+          </h1>
+          <div class="brand-tagline">Story + -ium — 이야기들이 머무는 공간에 오신 것을 환영합니다</div>
+          <div class="brand-meta">
+            <span class="user-chip" id="user-chip">
+              <span class="chip-icon">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              </span>
+              <span class="chip-label">게스트</span>
+            </span>
+            <span class="chip-sep"></span>
+            <span class="stat-chip" id="stat-chip">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+              </svg>
+              0권 읽음
+            </span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="search-wrap">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" type="text" id="search-input" placeholder="제목 검색..." autocomplete="off" />
+          </div>
+          <button class="nav-btn" id="ranking-btn" title="독서 랭킹">🏆</button>
+          <button class="auth-btn signin" id="auth-btn">Sign In</button>
+          <button class="icon-btn" id="dark-btn" title="다크모드 전환">
+            <svg id="dark-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-bar" id="filter-bar">
+        <div class="filter-group-genre">
+          <div class="filter-label">Genre</div>
+          <div class="filter-pills" id="genre-pills"></div>
+        </div>
+        <div class="filter-secondary-row">
+          <div class="filter-group">
+            <div class="filter-label">Age</div>
+            <div class="filter-pills" id="age-pills"></div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">Status</div>
+            <div class="filter-pills">
+              <button class="pill active" data-type="readStatus" data-val="전체">전체</button>
+              <button class="pill" data-type="readStatus" data-val="읽음">읽음</button>
+              <button class="pill" data-type="readStatus" data-val="미읽음">미읽음</button>
+            </div>
+          </div>
+        </div>
+        <div class="sort-group">
+          <div class="filter-label">Sort</div>
+          <div class="sort-row">
+            <div class="sort-toggle">
+              <button class="sort-btn active" data-sort="최신순">최신순</button>
+              <button class="sort-btn" data-sort="오래된순">오래된순</button>
+              <button class="sort-btn" data-sort="조회순">조회순</button>
+              <button class="sort-btn" data-sort="좋아요순">좋아요순</button>
+            </div>
+          </div>
+          <div class="sort-row">
+            <button class="shuffle-btn" id="shuffle-btn" title="랜덤 셔플">
+              <svg id="shuffle-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="16 3 21 3 21 8"/>
+                <line x1="4" y1="20" x2="21" y2="3"/>
+                <polyline points="21 16 21 21 16 21"/>
+                <line x1="15" y1="15" x2="21" y2="21"/>
+                <line x1="4" y1="4" x2="9" y2="9"/>
+              </svg>
+              Shuffle
+            </button>
+            <button class="bookmark-filter-btn" id="bookmark-filter-btn" title="찜한 책 보기">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              찜
+            </button>
+          </div>
+        </div>
+        <div class="filter-footer filter-footer-row">
+          <span class="result-count" id="result-count">전체 <strong>0</strong>권</span>
+          <button class="reset-btn" id="reset-btn">필터 초기화</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shelf-container">
+    <div class="shelf-box" id="shelf-box">
+      <div class="loader">
+        <svg class="spin" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+          <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+          <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+        </svg>
+        <p>책장 불러오는 중…</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Storium &bull; 이야기 박물관</div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged,
+         signInWithEmailAndPassword,
+         createUserWithEmailAndPassword,
+         updateProfile,
+         signInWithPopup, GoogleAuthProvider,
+         signInAnonymously, signOut as fbSignOut }
+                                                from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc,
+         onSnapshot, collection,
+         addDoc, getDocs, query, orderBy, deleteDoc, serverTimestamp, increment }
+                                                from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+/* ============================================================
+   FIREBASE INIT
+   ============================================================ */
+const firebaseConfig = {
+  apiKey:            "AIzaSyBduooVFCkAQAV5prkX8qqFcjgIZpShdNk",
+  authDomain:        "muhan-shelf.firebaseapp.com",
+  projectId:         "muhan-shelf",
+  storageBucket:     "muhan-shelf.firebasestorage.app",
+  messagingSenderId: "401875407312",
+  appId:             "1:401875407312:web:1fe6c936ebea44c8cfe9d5",
+  measurementId:     "G-1L8GM7ZS6B"
+};
+const app      = initializeApp(firebaseConfig);
+const auth     = getAuth(app);
+const db       = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let allBooks     = [];
+let interactions = {};
+let filter       = { genre: '전체', age: '전체', readStatus: '전체', sortBy: '최신순' };
+let randomOrder  = [];
+let allStats     = null;
+let isDark       = false;
+let currentUser  = null;
+let unsubInteractions = null;
+let showBookmarksOnly = false;
+
+function getBooksPerRow() {
+  const w = window.innerWidth;
+  if (w >= 1400) return 25;
+  if (w >= 1200) return 22;
+  if (w >= 1000) return 19;
+  if (w >= 800)  return 16;
+  if (w >= 600)  return 14;
+  return 12;
+}
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function getCatColor(cat, id) {
+  if (CONFIG.catColors[cat]) return CONFIG.catColors[cat];
+  if (id) {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    return CONFIG.spinepalette[h % CONFIG.spinepalette.length];
+  }
+  return CONFIG.defaultCatColor;
+}
+function getReadCount()   { return Object.values(interactions).filter(i => i.isRead).length; }
+
+/* ============================================================
+   FIRESTORE — 읽음 기록 실시간 동기화
+   ============================================================ */
+function subscribeInteractions(uid) {
+  if (unsubInteractions) unsubInteractions();
+  const colRef = collection(db, 'users', uid, 'interactions');
+  unsubInteractions = onSnapshot(colRef, snap => {
+    interactions = {};
+    snap.forEach(d => { interactions[d.id] = d.data(); });
+    updateStats();
+    renderShelf();
+  });
+}
+
+async function saveInteraction(bookId, updates) {
+  if (!currentUser) return;
+  const prev = interactions[bookId] || {};
+  interactions[bookId] = { bookId, ...prev, ...updates, updatedAt: new Date().toISOString() };
+  updateStats();
+  renderShelf();
+  const ref = doc(db, 'users', currentUser.uid, 'interactions', bookId);
+  await setDoc(ref, interactions[bookId], { merge: true });
+
+  // 전체 반응 카운트 집계 (books/{bookId}/stats)
+  if ('reaction' in updates) {
+    const statsRef = doc(db, 'books', bookId, 'meta', 'stats');
+    const rxnCountUpdate = {};
+    if (prev.reaction === 'like')    rxnCountUpdate.likes    = increment(-1);
+    if (prev.reaction === 'dislike') rxnCountUpdate.dislikes = increment(-1);
+    if (updates.reaction === 'like')    rxnCountUpdate.likes    = increment(1);
+    if (updates.reaction === 'dislike') rxnCountUpdate.dislikes = increment(1);
+    if (Object.keys(rxnCountUpdate).length)
+      await setDoc(statsRef, rxnCountUpdate, { merge: true });
+  }
+  if ('isRead' in updates) {
+    const statsRef = doc(db, 'books', bookId, 'meta', 'stats');
+    await setDoc(statsRef, { readers: increment(updates.isRead ? 1 : -1) }, { merge: true });
+  }
+}
+
+async function ensureStats() {
+  if (allStats !== null) return;
+  allStats = {};
+  await Promise.all(allBooks.map(async b => {
+    const s = await getBookStats(b.id);
+    allStats[b.id] = s;
+  }));
+}
+
+async function getBookStats(bookId) {
+  try {
+    const snap = await getDoc(doc(db, 'books', bookId, 'meta', 'stats'));
+    return snap.exists() ? snap.data() : { likes: 0, dislikes: 0, readers: 0 };
+  } catch { return { likes: 0, dislikes: 0, readers: 0 }; }
+}
+
+/* ============================================================
+   AUTH STATE LISTENER
+   ============================================================ */
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    subscribeInteractions(user.uid);
+  } else {
+    if (unsubInteractions) { unsubInteractions(); unsubInteractions = null; }
+    interactions = {};
+  }
+  updateAuthUI();
+  updateStats();
+  renderShelf();
+});
+
+/* ============================================================
+   AUTH ACTIONS
+   ============================================================ */
+async function doSignOut() {
+  await fbSignOut(auth);
+}
+
+async function doGoogleSignIn() {
+  try {
+    await signInWithPopup(auth, googleProvider);
+    closeAuthModal();
+  } catch (e) {
+    return e.message;
+  }
+}
+
+async function doEmailSignIn(email, password) {
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    return null;
+  } catch (e) {
+    const msgs = {
+      'auth/user-not-found':   '존재하지 않는 계정입니다.',
+      'auth/wrong-password':   '비밀번호가 올바르지 않습니다.',
+      'auth/invalid-credential':'이메일 또는 비밀번호가 올바르지 않습니다.',
+      'auth/too-many-requests':'잠시 후 다시 시도해주세요.',
+    };
+    return msgs[e.code] || e.message;
+  }
+}
+
+async function doEmailSignUp(email, password, nickname) {
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    if (nickname) {
+      await updateProfile(cred.user, { displayName: nickname });
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        nickname, email, createdAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    return null;
+  } catch (e) {
+    const msgs = {
+      'auth/email-already-in-use':'이미 가입된 이메일입니다.',
+      'auth/weak-password':        '비밀번호는 6자 이상이어야 합니다.',
+      'auth/invalid-email':        '이메일 형식이 올바르지 않습니다.',
+    };
+    return msgs[e.code] || e.message;
+  }
+}
+
+async function doAnonymousSignIn() {
+  try {
+    await signInAnonymously(auth);
+    closeAuthModal();
+  } catch (e) {
+    return e.message;
+  }
+}
+
+/* ============================================================
+   AUTH UI
+   ============================================================ */
+async function updateAuthUI() {
+  const chip = document.getElementById('user-chip');
+  const btn  = document.getElementById('auth-btn');
+  if (!chip || !btn) return;
+
+  const iconSVG = `<span class="chip-icon" id="chip-icon-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>`;
+
+  if (currentUser && !currentUser.isAnonymous) {
+    let nickname = currentUser.displayName;
+    try {
+      const snap = await getDoc(doc(db, 'users', currentUser.uid));
+      if (snap.exists() && snap.data().nickname) nickname = snap.data().nickname;
+    } catch {}
+    nickname = nickname || currentUser.email?.split('@')[0] || '로그인됨';
+    chip.innerHTML = `${iconSVG}<span class="chip-label"><em>${nickname}</em>의 책장</span>`;
+    const iconBtn = document.getElementById('chip-icon-btn');
+    if (iconBtn) { iconBtn.style.cursor = 'pointer'; iconBtn.title = '독서 통계'; iconBtn.addEventListener('click', openStatsPanel); }
+    btn.textContent = 'Sign Out';
+    btn.className   = 'auth-btn signout';
+    btn.onclick     = doSignOut;
+  } else if (currentUser && currentUser.isAnonymous) {
+    chip.innerHTML = `${iconSVG}<span class="chip-label">익명의 책장</span>`;
+    btn.textContent = 'Sign In';
+    btn.className   = 'auth-btn signin';
+    btn.onclick     = () => openAuthModal('login');
+  } else {
+    chip.innerHTML = `${iconSVG}<span class="chip-label">게스트</span>`;
+    btn.textContent = 'Sign In';
+    btn.className   = 'auth-btn signin';
+    btn.onclick     = () => openAuthModal('login');
+  }
+}
+
+function openAuthModal(mode = 'login') {
+  closeAuthModal();
+  const overlay = document.createElement('div');
+  overlay.className = 'auth-overlay';
+  overlay.id        = 'auth-overlay';
+  overlay.innerHTML = `
+    <div class="auth-modal">
+      <button class="modal-close" id="auth-close" aria-label="닫기">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <h2>${mode === 'login' ? 'Welcome Back' : 'Join Us'}</h2>
+      <p class="auth-subtitle">${mode === 'login' ? '로그인하면 읽음 기록이 저장됩니다.' : '계정을 만들고 독서 여정을 기록하세요.'}</p>
+
+      <!-- Google 로그인 -->
+      <button class="google-btn" id="google-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Google로 계속하기
+      </button>
+
+      <div class="auth-or"><span>또는</span></div>
+
+      ${mode === 'signup' ? `<div class="auth-field">
+        <label>닉네임</label>
+        <input type="text" id="auth-nickname" placeholder="화면에 표시될 이름" autocomplete="nickname" maxlength="20" />
+      </div>` : ''}
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="example@email.com" autocomplete="email" />
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+      <button class="auth-submit" id="auth-submit">${mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}</button>
+
+      <button class="anon-btn" id="anon-btn">익명으로 둘러보기</button>
+
+      <div class="auth-divider"></div>
+      <div class="auth-switch">
+        ${mode === 'login'
+          ? `계정이 없으신가요? <button id="auth-mode-toggle">회원가입</button>`
+          : `이미 계정이 있으신가요? <button id="auth-mode-toggle">로그인</button>`}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const emailInput = document.getElementById('auth-email');
+  const passInput  = document.getElementById('auth-password');
+  const errEl      = document.getElementById('auth-error');
+  const submitBtn  = document.getElementById('auth-submit');
+
+  document.getElementById('auth-close').addEventListener('click', closeAuthModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeAuthModal(); });
+  document.getElementById('auth-mode-toggle').addEventListener('click', () => {
+    closeAuthModal(); openAuthModal(mode === 'login' ? 'signup' : 'login');
+  });
+  document.getElementById('google-btn').addEventListener('click', async () => {
+    const err = await doGoogleSignIn();
+    if (err) { errEl.textContent = err; errEl.classList.add('show'); }
+  });
+  document.getElementById('anon-btn').addEventListener('click', async () => {
+    await doAnonymousSignIn();
+  });
+
+  async function handleSubmit() {
+    const email    = emailInput.value.trim();
+    const password = passInput.value;
+    errEl.classList.remove('show');
+    if (!email || !password) { errEl.textContent = '이메일과 비밀번호를 입력해주세요.'; errEl.classList.add('show'); return; }
+    submitBtn.disabled = true; submitBtn.textContent = '처리 중…';
+    const nickname = document.getElementById('auth-nickname')?.value.trim() || '';
+    if (mode === 'signup' && !nickname) { errEl.textContent = '닉네임을 입력해주세요.'; errEl.classList.add('show'); submitBtn.disabled = false; submitBtn.textContent = '이메일로 회원가입'; return; }
+    const err = mode === 'login'
+      ? await doEmailSignIn(email, password)
+      : await doEmailSignUp(email, password, nickname);
+    submitBtn.disabled = false;
+    submitBtn.textContent = mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입';
+    if (err) { errEl.textContent = err; errEl.classList.add('show'); return; }
+    closeAuthModal();
+  }
+
+  submitBtn.addEventListener('click', handleSubmit);
+  passInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleSubmit(); });
+  setTimeout(() => emailInput.focus(), 100);
+}
+
+function closeAuthModal() {
+  const el = document.getElementById('auth-overlay');
+  if (el) el.remove();
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+function updateStats() {
+  const rc  = getReadCount();
+  const tot = allBooks.length;
+  const pct = tot ? Math.round(rc / tot * 100) : 0;
+  const chip = document.getElementById('stat-chip');
+  if (chip) chip.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg> ${rc}권 읽음 ${pct > 0 ? `<span style="color:var(--accent-2);font-size:11px">(${pct}%)</span>` : ''}`;
+}
+
+/* ============================================================
+   FILTER & SORT
+   ============================================================ */
+function getFilteredBooks() {
+  const s = document.getElementById('search-input').value.toLowerCase().trim();
+  let result = allBooks.filter(b => {
+    if (s && !b.title?.toLowerCase().includes(s)) return false;
+    if (filter.genre !== '전체' && b.category !== filter.genre) return false;
+    if (filter.age   !== '전체' && b.age      !== filter.age)   return false;
+    if (filter.readStatus === '읽음'   &&  !interactions[b.id]?.isRead) return false;
+    if (filter.readStatus === '미읽음' &&   interactions[b.id]?.isRead) return false;
+    if (showBookmarksOnly && !interactions[b.id]?.bookmarked) return false;
+    return true;
+  });
+  if (filter.sortBy === '랜덤' && randomOrder.length) {
+    result.sort((a, b) => randomOrder.indexOf(a.id) - randomOrder.indexOf(b.id));
+  } else if (filter.sortBy === '최신순') {
+    result.sort((a, b) => new Date(b.date) - new Date(a.date));
+  } else if (filter.sortBy === '오래된순') {
+    result.sort((a, b) => new Date(a.date) - new Date(b.date));
+  } else if (filter.sortBy === '조회순') {
+    result.sort((a, b) => ((allStats?.[b.id]?.readers||0) - (allStats?.[a.id]?.readers||0)));
+  } else if (filter.sortBy === '좋아요순') {
+    result.sort((a, b) => ((allStats?.[b.id]?.likes||0) - (allStats?.[a.id]?.likes||0)));
+  } else {
+    result.sort((a, b) => new Date(b.date) - new Date(a.date));
+  }
+  return result;
+}
+
+/* ============================================================
+   RENDER SHELF
+   ============================================================ */
+function isNewBook(book) {
+  if (!book.date) return false;
+  const d = new Date(book.date);
+  return (Date.now() - d.getTime()) < 7 * 24 * 60 * 60 * 1000;
+}
+
+function renderShelf() {
+  const books = getFilteredBooks();
+  const box   = document.getElementById('shelf-box');
+  if (!box) return;
+  const N = getBooksPerRow();
+  box.style.setProperty('--cols', N);
+
+  const rc = document.getElementById('result-count');
+  if (rc) rc.innerHTML = `검색 결과 <strong>${books.length}</strong>권 / 전체 ${allBooks.length}권`;
+
+  if (!books.length) {
+    box.innerHTML = `<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>${showBookmarksOnly ? '찜한 책이 없어요 🔖' : 'No books found'}</p></div>`;
+    return;
+  }
+
+  const SHELF_COUNT = 4;
+  const rows = [];
+  for (let i = 0; i < SHELF_COUNT; i++) rows.push(books.slice(i * N, (i + 1) * N));
+
+  box.innerHTML = rows.map(row => `
+    <div class="shelf-row">
+      <div class="books-grid">
+        ${Array.from({ length: N }).map((_, ci) => {
+          const b = row[ci];
+          if (!b) return `<div class="book-slot"><div class="book-spacer"></div></div>`;
+          const isRead       = interactions[b.id]?.isRead;
+          const isBookmarked = interactions[b.id]?.bookmarked;
+          const isNew        = isNewBook(b);
+          const color        = getCatColor(b.category, b.id);
+          const hasImg       = b.imgLink && b.imgLink.startsWith('http');
+          return `
+            <div class="book-slot">
+              <div class="book-preview">
+                ${hasImg ? `<div class="preview-img-wrap"><img class="preview-img" src="${b.imgLink}" alt="" loading="lazy" /></div>` : ''}
+                <div class="preview-info">
+                  <div class="preview-title">${b.title || ''}</div>
+                  ${b.category ? `<div class="preview-cat">${b.category}</div>` : ''}
+                </div>
+              </div>
+              <div class="book-3d">
+                ${isNew ? `<div class="new-badge">NEW</div>` : ''}
+                ${isBookmarked ? `<div class="bookmark-ribbon"></div>` : ''}
+                <div class="book-pages-top"></div>
+                <div class="book-cover-face" style="background:${color};filter:brightness(1.5)">${hasImg ? `<img src="${b.imgLink}" alt="" loading="lazy">` : ''}</div>
+                <div class="book-spine" style="background:${color}" data-id="${b.id}">
+                  <span class="book-title-text">${b.title || ''}</span>
+                  ${isRead ? `<div class="read-ribbon"></div>` : ''}
+                </div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+      <div class="shelf-plank"></div>
+    </div>
+  `).join('');
+
+  // hover: book-slot mouseenter/leave (preserve-3d 환경에서 가장 안정적)
+  box.querySelectorAll('.book-slot').forEach(slot => {
+    if (!slot.querySelector('.book-spine')) return;
+    let leaveTimer;
+    slot.addEventListener('mouseenter', () => {
+      clearTimeout(leaveTimer);
+      slot.classList.add('hovered');
+    });
+    slot.addEventListener('mouseleave', () => {
+      leaveTimer = setTimeout(() => slot.classList.remove('hovered'), 60);
+    });
+  });
+}
+
+// 클릭: book-slot 안의 책(book-3d 또는 preview) 클릭 → 모달 (renderShelf와 독립, 한 번만 등록)
+document.getElementById('shelf-box').addEventListener('click', (e) => {
+  if (e.target.closest('.shelf-plank')) return;
+  const slot = e.target.closest('.book-slot');
+  if (!slot) return;
+  const spine = slot.querySelector('.book-spine');
+  if (!spine) return;
+  const book = allBooks.find(b => b.id === spine.dataset.id);
+  if (book) openModal(book);
+});
+
+// 화면 크기 바뀌면 재렌더
+window.addEventListener('resize', () => renderShelf());
+
+/* ============================================================
+   COMMENTS — Firestore books/{bookId}/comments
+   ============================================================ */
+async function loadComments(bookId) {
+  const colRef = collection(db, 'books', bookId, 'comments');
+  const q = query(colRef, orderBy('createdAt', 'asc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function addComment(bookId, text) {
+  if (!currentUser || !text.trim()) return null;
+  const nickname = currentUser.displayName || currentUser.email?.split('@')[0] || '익명';
+  return await addDoc(collection(db, 'books', bookId, 'comments'), {
+    uid: currentUser.uid, nickname,
+    text: text.trim(), createdAt: serverTimestamp()
+  });
+}
+
+async function deleteComment(bookId, commentId) {
+  await deleteDoc(doc(db, 'books', bookId, 'comments', commentId));
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+async function openModal(book) {
+  history.replaceState({}, '', '#book-' + book.id);
+  closeModal();
+  const isRead       = interactions[book.id]?.isRead;
+  const reaction     = interactions[book.id]?.reaction;
+  const isBookmarked = interactions[book.id]?.bookmarked;
+  const color        = getCatColor(book.category, book.id);
+  const [comments, stats] = await Promise.all([loadComments(book.id), getBookStats(book.id)]);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id        = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <button class="modal-close" id="modal-close" aria-label="닫기">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      ${book.imgLink ? `<div class="modal-cover">
+        <img class="modal-img" src="${book.imgLink}" alt="" />
+        <div class="modal-img-overlay"></div>
+        <!-- 반응 카운트: 표지 상단 오버레이 -->
+        <div class="modal-stats-top">
+          <span class="modal-stat">👍 ${Math.max(0,stats.likes||0)}</span>
+          <span class="modal-stat">👎 ${Math.max(0,stats.dislikes||0)}</span>
+          <span class="modal-stat">📖 ${Math.max(0,stats.readers||0)}</span>
+        </div>
+        <div class="modal-meta">
+          <span class="modal-cat" style="background:${color}">${book.category || ''}</span>
+          <span class="modal-date">${book.date || ''}</span>
+        </div>
+      </div>` : ''}
+      <div class="modal-body">
+        <!-- 제목 + 찜 아이콘 -->
+        <div class="modal-title-row">
+          <div class="modal-title">${book.title || ''}</div>
+          ${currentUser && !currentUser.isAnonymous ? `
+          <button class="btn-bookmark-icon ${isBookmarked ? 'active' : ''}" id="btn-bookmark" title="${isBookmarked ? '찜 취소' : '찜하기'}">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="${isBookmarked ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.5">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+          </button>` : ''}
+        </div>
+        <!-- 사진 없을 때 반응 카운트 인라인 -->
+        ${!book.imgLink ? `<div class="modal-stats-nophoto">
+          <span class="modal-stat-np">👍 ${Math.max(0,stats.likes||0)}</span>
+          <span class="modal-stat-np">👎 ${Math.max(0,stats.dislikes||0)}</span>
+          <span class="modal-stat-np">📖 ${Math.max(0,stats.readers||0)}</span>
+        </div>` : ''}
+        <div class="modal-summary">"${book.summary || '소개글이 없습니다.'}"</div>
+        <div class="modal-divider"></div>
+
+        <!-- 읽기 버튼 + 작품 링크 한 줄 -->
+        <div class="modal-action-row">
+          <button class="btn-read ${isRead ? 'done' : ''}" id="read-toggle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            ${isRead ? '완독 완료 ✓' : '다 읽었어요'}
+          </button>
+          ${book.link && book.link !== '#' ? `<a href="${book.link}" target="_blank" rel="noopener noreferrer" class="btn-link-inline">
+            읽으러 가기
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+              <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+            </svg>
+          </a>` : ''}
+        </div>
+
+        <!-- 반응 (내 반응, 읽은 경우에만) -->
+        <div id="reaction-area"></div>
+
+        <!-- 댓글 버튼 -->
+        <button class="comment-open-btn" id="comment-open-btn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          댓글${comments.length > 0 ? ` (${comments.length})` : ''} 보기
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // 기본 닫기
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+
+  // 번쩍임 없이 인플레이스 업데이트
+  function refreshModalInteractions() {
+    const iR  = interactions[book.id]?.isRead;
+    const rxn = interactions[book.id]?.reaction;
+    const bkm = interactions[book.id]?.bookmarked;
+
+    const readBtn = document.getElementById('read-toggle');
+    if (readBtn) {
+      readBtn.className = `btn-read ${iR ? 'done' : ''}`;
+      readBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> ${iR ? '완독 완료 ✓' : '다 읽었어요'}`;
+    }
+    const bkmBtn = document.getElementById('btn-bookmark');
+    if (bkmBtn) {
+      bkmBtn.className = `btn-bookmark-icon${bkm ? ' active' : ''}`;
+      bkmBtn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="${bkm ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>`;
+      bkmBtn.title = bkm ? '찜 취소' : '찜하기';
+    }
+
+    let reactionWrap = document.getElementById('reaction-area');
+    if (iR && reactionWrap) {
+      reactionWrap.innerHTML = `
+        <div class="reaction-wrap">
+          <span class="reaction-label">이 책 어땠나요?</span>
+          <div class="reaction-btns">
+            <button class="reaction-btn like ${rxn === 'like' ? 'active' : ''}" id="btn-like">👍 좋아요</button>
+            <button class="reaction-btn dislike ${rxn === 'dislike' ? 'active' : ''}" id="btn-dislike">👎 별로에요</button>
+          </div>
+        </div>`;
+      document.getElementById('btn-like').onclick = async () => {
+        await saveInteraction(book.id, { reaction: interactions[book.id]?.reaction === 'like' ? null : 'like' });
+        refreshModalInteractions();
+      };
+      document.getElementById('btn-dislike').onclick = async () => {
+        await saveInteraction(book.id, { reaction: interactions[book.id]?.reaction === 'dislike' ? null : 'dislike' });
+        refreshModalInteractions();
+      };
+    } else if (reactionWrap) {
+      reactionWrap.innerHTML = '';
+    }
+  }
+
+  refreshModalInteractions();
+
+  // 읽음 토글
+  document.getElementById('read-toggle').addEventListener('click', async () => {
+    if (!currentUser) { closeModal(); openAuthModal('login'); return; }
+    const newVal = !interactions[book.id]?.isRead;
+    await saveInteraction(book.id, { isRead: newVal, ...(newVal ? {} : { reaction: null }) });
+    refreshModalInteractions();
+  });
+
+  // 찜 토글
+  document.getElementById('btn-bookmark')?.addEventListener('click', async () => {
+    if (!currentUser) { closeModal(); openAuthModal('login'); return; }
+    await saveInteraction(book.id, { bookmarked: !interactions[book.id]?.bookmarked });
+    refreshModalInteractions();
+  });
+
+  // 댓글 시트 열기
+  document.getElementById('comment-open-btn').addEventListener('click', () => openCommentSheet(book, comments));
+
+}
+
+/* ============================================================
+   COMMENT SHEET
+   ============================================================ */
+function openCommentSheet(book, comments) {
+  const existing = document.getElementById('comment-sheet-overlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'comment-sheet-overlay';
+  overlay.id = 'comment-sheet-overlay';
+
+  const commentListHTML = comments.length === 0
+    ? `<div class="comment-empty">첫 번째 댓글을 남겨보세요!</div>`
+    : comments.map(c => `
+        <div class="comment-item" data-cid="${c.id}">
+          <div class="comment-header">
+            <span class="comment-nick">${c.nickname || '익명'}</span>
+            <span class="comment-time">${c.createdAt?.toDate ? new Date(c.createdAt.toDate()).toLocaleDateString('ko-KR') : ''}</span>
+            ${currentUser && c.uid === currentUser.uid
+              ? `<button class="comment-del" data-cid="${c.id}">삭제</button>` : ''}
+          </div>
+          <div class="comment-text">${c.text}</div>
+        </div>`).join('');
+
+  overlay.innerHTML = `
+    <div class="comment-sheet">
+      <div class="comment-sheet-header">
+        <div class="comment-sheet-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          댓글 ${comments.length}
+        </div>
+        <button class="comment-sheet-close" id="sheet-close">✕</button>
+      </div>
+      <div class="comment-sheet-book">${book.title}</div>
+      <div class="comments-list">${commentListHTML}</div>
+      ${currentUser && !currentUser.isAnonymous ? `
+      <div class="comment-input-wrap" style="margin-top:0.875rem;">
+        <input class="comment-input" id="sheet-input" type="text" placeholder="댓글을 입력하세요..." maxlength="200" autocomplete="off" />
+        <button class="comment-submit" id="sheet-submit">등록</button>
+      </div>` : `<div class="comment-login-hint" style="margin-top:0.75rem;">댓글을 달려면 <button id="sheet-login-btn" style="background:none;border:none;cursor:pointer;color:var(--accent);font-weight:700;text-decoration:underline;">로그인</button>이 필요합니다.</div>`}
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+  document.getElementById('sheet-close').addEventListener('click', () => overlay.remove());
+  document.getElementById('sheet-login-btn')?.addEventListener('click', () => {
+    overlay.remove(); closeModal(); openAuthModal('login');
+  });
+
+  const input = document.getElementById('sheet-input');
+  const submit = document.getElementById('sheet-submit');
+  async function submitSheetComment() {
+    const text = input?.value.trim();
+    if (!text || submit?.disabled) return;
+    submit.disabled = true;
+    input.value = '';
+    const ref = await addComment(book.id, text);
+
+    // 새 댓글을 DOM에 직접 추가
+    const nickname = currentUser.displayName || currentUser.email?.split('@')[0] || '익명';
+    const commentsList = overlay.querySelector('.comments-list');
+    const emptyEl = commentsList.querySelector('.comment-empty');
+    if (emptyEl) emptyEl.remove();
+
+    const newItem = document.createElement('div');
+    newItem.className = 'comment-item';
+    newItem.innerHTML = `
+      <div class="comment-header">
+        <span class="comment-nick">${nickname}</span>
+        <span class="comment-time">${new Date().toLocaleDateString('ko-KR')}</span>
+        <button class="comment-del">삭제</button>
+      </div>
+      <div class="comment-text">${text}</div>
+    `;
+    commentsList.appendChild(newItem);
+    newItem.querySelector('.comment-del').addEventListener('click', async () => {
+      if (ref?.id) await deleteComment(book.id, ref.id);
+      newItem.remove();
+    });
+
+    // 시트 헤더 카운트 갱신
+    const titleEl = overlay.querySelector('.comment-sheet-title');
+    if (titleEl) {
+      const prev = parseInt(titleEl.textContent.match(/\d+/)?.[0] || '0');
+      titleEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 댓글 ${prev + 1}`;
+    }
+
+    input.value = '';
+    submit.disabled = false;
+    commentsList.scrollTop = commentsList.scrollHeight;
+  }
+  submit?.addEventListener('click', submitSheetComment);
+  input?.addEventListener('keydown', e => { if (e.key === 'Enter') submitSheetComment(); });
+
+  overlay.querySelectorAll('.comment-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const item = btn.closest('.comment-item');
+      await deleteComment(book.id, btn.dataset.cid);
+      item.remove();
+      const commentsList = overlay.querySelector('.comments-list');
+      const remaining = commentsList.querySelectorAll('.comment-item').length;
+      const titleEl = overlay.querySelector('.comment-sheet-title');
+      if (titleEl) titleEl.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> 댓글 ${remaining}`;
+      if (remaining === 0) commentsList.innerHTML = '<div class="comment-empty">첫 번째 댓글을 남겨보세요!</div>';
+    });
+  });
+}
+
+function closeModal() {
+  const el = document.getElementById('modal-overlay');
+  if (el) el.remove();
+  if (location.hash.startsWith('#book-')) history.replaceState({}, '', location.pathname);
+}
+
+/* ============================================================
+   FILTER PILLS
+   ============================================================ */
+function buildFilterPills() {
+  const genres = CONFIG.genres.length > 1 ? CONFIG.genres : ['전체', ...new Set(allBooks.map(b => b.category).filter(Boolean))];
+  const ages   = CONFIG.ages.length   > 1 ? CONFIG.ages   : ['전체', ...new Set(allBooks.map(b => b.age).filter(Boolean))];
+
+  document.getElementById('genre-pills').innerHTML = genres.map(g =>
+    `<button class="pill${filter.genre === g ? ' active' : ''}" data-type="genre" data-val="${g}">${g}</button>`
+  ).join('');
+  document.getElementById('age-pills').innerHTML = ages.map(a =>
+    `<button class="pill${filter.age === a ? ' active' : ''}" data-type="age" data-val="${a}">${a}</button>`
+  ).join('');
+
+  document.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const { type, val } = btn.dataset;
+      filter[type] = val;
+      document.querySelectorAll(`.pill[data-type="${type}"]`).forEach(b => b.classList.toggle('active', b.dataset.val === val));
+      renderShelf();
+    });
+  });
+}
+
+function resetFilters() {
+  filter = { genre: '전체', age: '전체', readStatus: '전체', sortBy: '최신순' };
+  randomOrder = [];
+  document.getElementById('search-input').value = '';
+  document.querySelectorAll('.pill').forEach(b => b.classList.toggle('active', b.dataset.val === '전체'));
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === '최신순'));
+  document.getElementById('shuffle-btn').classList.remove('active');
+  renderShelf();
+}
+
+/* ============================================================
+   CSV PARSER
+   ============================================================ */
+function parseCSV(text) {
+  const rows = [];
+  let field = '', row = [], inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i], next = text[i + 1];
+    if (inQuote) {
+      if (ch === '"' && next === '"') { field += '"'; i++; }
+      else if (ch === '"') inQuote = false;
+      else field += ch;
+    } else {
+      if (ch === '"') inQuote = true;
+      else if (ch === ',') { row.push(field); field = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && next === '\n') i++;
+        row.push(field); field = '';
+        if (row.some(c => c !== '')) rows.push(row);
+        row = [];
+      } else field += ch;
+    }
+  }
+  if (field || row.length) { row.push(field); if (row.some(c => c !== '')) rows.push(row); }
+  return rows;
+}
+function csvToObjects(text) {
+  const rows = parseCSV(text.trim());
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1).map(vals => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] || '').trim(); });
+    if (obj.id) obj.imgLink = `https://raw.githubusercontent.com/swimco911-arch/storium/main/bookcover/story_${obj.id}.png`;
+    return obj;
+  }).filter(o => o.id);
+}
+
+/* ============================================================
+   EVENT LISTENERS
+   ============================================================ */
+document.getElementById('search-input').addEventListener('input', () => renderShelf());
+document.getElementById('ranking-btn').addEventListener('click', () => openRankingPanel());
+document.getElementById('bookmark-filter-btn').addEventListener('click', () => {
+  showBookmarksOnly = !showBookmarksOnly;
+  document.getElementById('bookmark-filter-btn').classList.toggle('active', showBookmarksOnly);
+  renderShelf();
+});
+
+document.querySelectorAll('.sort-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    filter.sortBy = btn.dataset.sort;
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === filter.sortBy));
+    document.getElementById('shuffle-btn').classList.remove('active');
+    if (filter.sortBy === '조회순' || filter.sortBy === '좋아요순') await ensureStats();
+    renderShelf();
+  });
+});
+
+document.getElementById('shuffle-btn').addEventListener('click', () => {
+  filter.sortBy = '랜덤';
+  randomOrder   = [...allBooks].sort(() => Math.random() - 0.5).map(b => b.id);
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('shuffle-btn').classList.add('active');
+  const icon = document.getElementById('shuffle-icon');
+  icon.style.animation = 'spin 0.45s ease';
+  setTimeout(() => { icon.style.animation = ''; }, 450);
+  renderShelf();
+});
+
+document.getElementById('reset-btn').addEventListener('click', resetFilters);
+
+document.getElementById('dark-btn').addEventListener('click', () => {
+  isDark = !isDark;
+  document.getElementById('app').classList.toggle('dark', isDark);
+  document.getElementById('dark-btn').classList.toggle('active', isDark);
+  const icon = document.getElementById('dark-icon');
+  icon.innerHTML = isDark
+    ? `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`
+    : `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeAuthModal(); }
+});
+
+/* ============================================================
+   STATS PANEL
+   ============================================================ */
+function openStatsPanel() {
+  if (!currentUser) { openAuthModal('login'); return; }
+  const overlay = document.createElement('div');
+  overlay.className = 'stats-overlay'; overlay.id = 'stats-overlay';
+
+  // 월별 집계
+  const monthMap = {};
+  const genreMap = {};
+  let totalLikes = 0, totalDislikes = 0;
+
+  Object.entries(interactions).forEach(([bookId, ix]) => {
+    if (!ix.isRead) return;
+    const book = allBooks.find(b => b.id === bookId);
+    if (!book) return;
+
+    // 월별
+    const d = new Date(ix.updatedAt || book.date || '');
+    if (!isNaN(d)) {
+      const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      monthMap[key] = (monthMap[key] || 0) + 1;
+    }
+    // 장르
+    if (book.category) genreMap[book.category] = (genreMap[book.category] || 0) + 1;
+    // 반응
+    if (ix.reaction === 'like') totalLikes++;
+    if (ix.reaction === 'dislike') totalDislikes++;
+  });
+
+  const readCount   = Object.values(interactions).filter(i => i.isRead).length;
+  const bookmarkCnt = Object.values(interactions).filter(i => i.bookmarked).length;
+  const pct         = allBooks.length ? Math.round(readCount / allBooks.length * 100) : 0;
+
+  // 최근 6개월
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(); d.setMonth(d.getMonth() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    months.push({ key, label: `${d.getMonth()+1}월`, count: monthMap[key] || 0 });
+  }
+  const maxMonth = Math.max(...months.map(m => m.count), 1);
+
+  // 장르 바
+  const maxGenre = Math.max(...Object.values(genreMap), 1);
+  const genreHTML = Object.entries(genreMap).sort((a,b)=>b[1]-a[1]).map(([g, c]) => `
+    <div class="chart-bar-row">
+      <div class="chart-bar-label">${g}</div>
+      <div class="chart-bar-track"><div class="chart-bar-fill" style="width:${Math.round(c/maxGenre*100)}%"></div></div>
+      <div class="chart-bar-count">${c}권</div>
+    </div>`).join('') || '<p style="font-size:12px;color:var(--text-3)">아직 읽은 책이 없어요</p>';
+
+  overlay.innerHTML = `
+    <div class="stats-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;">
+        <h2 style="margin-bottom:0;">📊 독서 통계</h2>
+        <button class="modal-close" id="stats-close" style="position:static;display:flex;flex-shrink:0;background:var(--bg-2);color:var(--text-1);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="stats-grid">
+        <div class="stats-card"><div class="val">${readCount}</div><div class="lbl">완독</div></div>
+        <div class="stats-card"><div class="val">${pct}%</div><div class="lbl">달성률</div></div>
+        <div class="stats-card"><div class="val">${bookmarkCnt}</div><div class="lbl">찜한책</div></div>
+      </div>
+
+      <div class="stats-section-title">최근 6개월 완독</div>
+      <div class="monthly-grid">
+        ${months.map(m => `
+          <div class="month-col">
+            <div class="month-count">${m.count || ''}</div>
+            <div class="month-bar-wrap">
+              <div class="month-bar" style="height:${Math.round(m.count/maxMonth*100)}%"></div>
+            </div>
+            <div class="month-label">${m.label}</div>
+          </div>`).join('')}
+      </div>
+
+      <div class="stats-section-title">장르별 완독</div>
+      <div class="chart-bar-wrap">${genreHTML}</div>
+
+
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById('stats-close').addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+}
+
+/* ============================================================
+   RANKING PANEL
+   ============================================================ */
+async function openRankingPanel() {
+  const overlay = document.createElement('div');
+  overlay.className = 'stats-overlay'; overlay.id = 'ranking-overlay';
+  overlay.innerHTML = `<div class="stats-panel"><div class="loader"><svg class="spin" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg><p>집계 중...</p></div></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
+
+  const results = await Promise.all(allBooks.map(async b => {
+    const s = await getBookStats(b.id);
+    return { book: b, ...s };
+  }));
+
+  const byReaders = [...results].sort((a,b) => (b.readers||0) - (a.readers||0)).slice(0, 3);
+  const byLikes   = [...results].sort((a,b) => (b.likes||0)   - (a.likes||0)).slice(0, 3);
+
+  const medals = ['🥇', '🥈', '🥉'];
+
+  function rankColHTML(list, key, emoji, title) {
+    const items = list.filter(r => (r[key]||0) > 0);
+    const rows = items.length
+      ? items.map((r, i) => `
+          <div class="rank-row">
+            <span class="rank-medal">${medals[i]}</span>
+            ${r.book.imgLink ? `<img class="rank-thumb" src="${r.book.imgLink}" alt="" loading="lazy" />` : '<div class="rank-thumb"></div>'}
+            <div class="rank-info">
+              <div class="rank-name">${r.book.title}</div>
+              <div class="rank-cnt">${emoji} ${r[key]}</div>
+            </div>
+          </div>`).join('')
+      : `<div class="rank-empty">데이터 없음</div>`;
+    return `<div class="rank-col"><div class="rank-col-title">${emoji} ${title}</div>${rows}</div>`;
+  }
+
+  const panel = overlay.querySelector('.stats-panel');
+  panel.style.maxWidth = '57rem';
+  panel.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;">
+      <h2 style="margin-bottom:0;">🏆 스토리 랭킹</h2>
+      <button class="modal-close" id="ranking-close" style="position:static;background:var(--bg-2);color:var(--text-1);flex-shrink:0;">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="rank-grid">
+      ${rankColHTML(byReaders, 'readers', '📖', '조회수 순위')}
+      ${rankColHTML(byLikes, 'likes', '👍', '좋아요 순위')}
+    </div>
+  `;
+  document.getElementById('ranking-close').addEventListener('click', () => overlay.remove());
+}
+
+/* ============================================================
+   DATA LOADING
+   ============================================================ */
+async function loadData() {
+  try {
+    const res = await fetch(CONFIG.sheetUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    allBooks = csvToObjects(text);
+    if (!allBooks.length) throw new Error('empty');
+  } catch (err) {
+    console.warn('Sheet load failed:', err.message);
+    allBooks = [];
+  }
+  buildFilterPills();
+  updateStats();
+  renderShelf();
+  // URL hash로 공유된 책 자동 오픈
+  const hashId = location.hash.startsWith('#book-') ? location.hash.slice(6) : null;
+  if (hashId) { const b = allBooks.find(b => b.id === hashId); if (b) openModal(b); }
+}
+
+loadData();
+</script>
+</body>
+</html>

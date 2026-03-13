@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grand Shelf</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       CONFIG & TOKENS
+       ============================================================ */
+    :root {
+      --bg:          #faf8f4;
+      --bg-2:        #f2ede6;
+      --surface:     #ffffff;
+      --border:      rgba(120,100,80,0.15);
+      --border-2:    rgba(120,100,80,0.25);
+      --text-1:      #1a1612;
+      --text-2:      #6b5e52;
+      --text-3:      #a8998e;
+      --accent:      #d97706;
+      --accent-bg:   rgba(217,119,6,0.1);
+      --accent-2:    #f59e0b;
+      --danger:      #dc2626;
+      --shelf-wood:  #c0a08a;
+      --shelf-bg:    #e8d5c4;
+      --shelf-plank: #a68b7c;
+      --shelf-border:#b8956e;
+      --radius-sm:   8px;
+      --radius-md:   14px;
+      --radius-lg:   24px;
+      --radius-xl:   40px;
+      --shadow-book: 10px 0 22px -6px rgba(0,0,0,0.6);
+      --shadow-modal:0 32px 80px rgba(0,0,0,0.35);
+      --font-display:'Playfair Display', Georgia, serif;
+      --font-body:   'Noto Sans KR', sans-serif;
+      --transition:  0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    .dark {
+      --bg:          #0d0a08;
+      --bg-2:        #160f0a;
+      --surface:     #1e1510;
+      --border:      rgba(255,220,180,0.08);
+      --border-2:    rgba(255,220,180,0.14);
+      --text-1:      #fdf6ec;
+      --text-2:      #c4a882;
+      --text-3:      #7a6555;
+      --shelf-bg:    #1e1208;
+      --shelf-plank: #2e1c0f;
+      --shelf-border:#0d0a08;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text-1);
+      transition: background var(--transition), color var(--transition);
+      min-height: 100vh;
+    }
+
+    .page { min-height: 100vh; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+    .shelf-container { max-width: 1500px; margin: 0 auto; padding: 0 1rem 6rem; }
+
+    /* HEADER */
+    .header { padding: 2.5rem 0 0; animation: fadeDown 0.6s ease both; }
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .header-top {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      flex-wrap: wrap; gap: 1.25rem; margin-bottom: 1.75rem;
+    }
+    .brand h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900; letter-spacing: -0.03em;
+      display: flex; align-items: center; gap: 0.75rem; line-height: 1;
+    }
+    .brand-icon { color: var(--accent-2); flex-shrink: 0; }
+    .brand-nickname {
+      font-family: var(--font-body);
+      font-size: 13px; font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      margin-top: -0.25rem;
+      margin-bottom: 0.5rem;
+      min-height: 1.2em;
+      transition: opacity 0.3s ease;
+    }
+    .brand-meta {
+      display: flex; align-items: center; flex-wrap: wrap;
+      gap: 0.75rem; margin-top: 0.75rem;
+    }
+    .user-chip { display: flex; align-items: center; gap: 0.4rem; font-size: 12px; color: var(--text-3); }
+    .stat-chip {
+      display: flex; align-items: center; gap: 0.4rem;
+      font-size: 11px; font-weight: 700; color: var(--accent);
+      background: var(--accent-bg); padding: 0.3rem 0.75rem; border-radius: 9999px;
+    }
+    .progress-wrap { margin-top: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+    .progress-track {
+      flex: 1; max-width: 260px; height: 5px;
+      background: var(--border); border-radius: 9999px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      border-radius: 9999px;
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .progress-label { font-size: 11px; color: var(--text-3); font-weight: 700; }
+
+    /* CONTROLS */
+    .controls {
+      display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+      padding: 0.5rem; background: var(--bg-2);
+      border: 0.5px solid var(--border); border-radius: var(--radius-md);
+    }
+    .search-wrap { position: relative; }
+    .search-icon {
+      position: absolute; left: 0.625rem; top: 50%; transform: translateY(-50%);
+      color: var(--text-3); pointer-events: none;
+    }
+    .search-input {
+      padding: 0.45rem 0.75rem 0.45rem 2.1rem;
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body);
+      color: var(--text-1); outline: none; width: 180px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .search-input::placeholder { color: var(--text-3); }
+    .search-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .icon-btn {
+      width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+      cursor: pointer; color: var(--text-2); transition: background var(--transition), color var(--transition);
+    }
+    .icon-btn:hover { background: var(--bg-2); color: var(--text-1); }
+    .icon-btn.active { background: var(--accent-2); color: white; border-color: var(--accent); }
+
+    /* FILTER BAR */
+    .filter-bar {
+      background: var(--surface); border: 0.5px solid var(--border);
+      border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+      display: flex; flex-wrap: wrap; gap: 1.75rem; align-items: flex-start;
+      animation: fadeUp 0.5s 0.1s ease both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 0.6rem; }
+    .filter-label {
+      font-size: 9px; font-weight: 900; text-transform: uppercase;
+      letter-spacing: 0.18em; color: var(--text-3);
+    }
+    .filter-pills { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+    .pill {
+      padding: 0.3rem 0.75rem; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 700; font-family: var(--font-body);
+      border: 0.5px solid transparent; cursor: pointer;
+      background: transparent; color: var(--text-2); opacity: 0.55;
+      transition: all var(--transition);
+    }
+    .pill:hover { opacity: 0.9; background: var(--bg-2); }
+    .pill.active {
+      background: #fde68a; color: #1a1612; opacity: 1;
+      border-color: #f6c94e; transform: scale(1.04);
+    }
+    .dark .pill.active { background: #92400e; color: #fef3c7; border-color: #b45309; }
+
+    .sort-group {
+      margin-left: auto; display: flex; flex-direction: column; gap: 0.6rem;
+      border-left: 0.5px solid var(--border); padding-left: 1.75rem;
+    }
+    .sort-row { display: flex; align-items: center; gap: 0.75rem; }
+    .sort-toggle {
+      display: flex; gap: 2px; padding: 3px;
+      background: var(--bg-2); border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    }
+    .sort-btn {
+      padding: 0.3rem 0.875rem; border-radius: 6px; font-size: 11px; font-weight: 700;
+      font-family: var(--font-body); border: none; cursor: pointer;
+      background: transparent; color: var(--text-2); opacity: 0.5;
+      transition: all var(--transition);
+    }
+    .sort-btn.active { background: var(--surface); color: var(--accent); opacity: 1; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+    .dark .sort-btn.active { background: #292524; }
+
+    .shuffle-btn {
+      display: flex; align-items: center; gap: 0.375rem;
+      padding: 0.4rem 0.875rem; border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 900; font-family: var(--font-body);
+      border: 0.5px solid var(--border); cursor: pointer;
+      background: var(--bg-2); color: var(--text-2); opacity: 0.6;
+      transition: all var(--transition);
+    }
+    .shuffle-btn:hover { opacity: 1; }
+    .shuffle-btn.active { background: var(--accent-2); color: white; border-color: var(--accent); opacity: 1; }
+
+    .filter-footer {
+      width: 100%; display: flex; align-items: center; justify-content: space-between;
+      padding-top: 0.875rem; border-top: 0.5px solid var(--border); margin-top: 0.25rem;
+    }
+    .result-count { font-size: 12px; color: var(--text-3); font-weight: 500; }
+    .result-count strong { color: var(--accent); font-weight: 700; }
+    .reset-btn {
+      font-size: 11px; font-weight: 700; font-family: var(--font-body);
+      color: var(--text-3); background: none; border: none; cursor: pointer;
+      padding: 0.2rem 0.5rem; border-radius: var(--radius-sm);
+      transition: color var(--transition);
+    }
+    .reset-btn:hover { color: var(--danger); }
+
+    /* SHELF */
+    .shelf-box {
+      background: var(--shelf-bg);
+      border-left: 22px solid var(--shelf-border);
+      border-right: 22px solid var(--shelf-border);
+      border-top: none; border-bottom: none;
+      border-radius: var(--radius-xl);
+      padding: 2.5rem 2rem; overflow: visible;
+      box-shadow: 0 40px 100px -20px rgba(0,0,0,0.25);
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+    .shelf-row { margin-bottom: 5rem; }
+    .shelf-row:last-child { margin-bottom: 0; }
+    .books-grid { display: grid; grid-template-columns: repeat(10, 1fr); }
+    .book-slot { padding: 0 3px; position: relative; }
+
+    .book-spine {
+      width: 100%; aspect-ratio: 1 / 2.8; border-radius: 3px 3px 0 0;
+      cursor: pointer; position: relative; display: flex; align-items: center;
+      justify-content: center; overflow: hidden;
+      transition: transform 0.32s cubic-bezier(0.34,1.56,0.64,1), filter 0.2s ease;
+      border-right: 1px solid rgba(255,255,255,0.12);
+      box-shadow: var(--shadow-book);
+    }
+    .book-spine::before {
+      content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
+      width: 1px; background: rgba(255,255,255,0.08);
+    }
+    .book-spine:hover { transform: translateY(-2.75rem) scale(1.02); filter: brightness(1.18); z-index: 20; }
+
+    .book-title-text {
+      writing-mode: vertical-lr; transform: none;
+      font-size: clamp(11px, 1.5vw, 17px); font-weight: 900;
+      color: rgba(255,255,255,0.95); text-transform: uppercase;
+      letter-spacing: 0.05em; white-space: nowrap; overflow: hidden;
+      text-overflow: ellipsis; max-height: 90%; padding: 4px 3px;
+      text-shadow: 0 1px 8px rgba(0,0,0,0.7); font-family: var(--font-body);
+    }
+    .read-ribbon {
+      position: absolute; top: 0; right: 4px; width: 9px; height: 52px;
+      background: var(--danger); border-radius: 0 0 9999px 9999px;
+      display: flex; align-items: flex-end; justify-content: center; padding-bottom: 5px;
+      box-shadow: 0 2px 6px rgba(220,38,38,0.5);
+    }
+
+    /* hover preview */
+    .book-preview {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%; transform: translateX(-50%) scale(0.9);
+      transform-origin: bottom center;
+      width: 88px;
+      background: var(--surface);
+      border: 0.5px solid var(--border-2);
+      border-radius: var(--radius-sm);
+      padding: 6px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+      z-index: 50;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.18s, transform 0.18s;
+      white-space: normal;
+    }
+    .book-slot:hover .book-preview { opacity: 1; transform: translateX(-50%) scale(1); }
+    .preview-img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 4px; display: block; margin-bottom: 5px; }
+    .preview-title { font-size: 9px; font-weight: 700; color: var(--text-1); line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+    .preview-cat { font-size: 8px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent); margin-top: 3px; }
+
+    .shelf-plank {
+      height: 2.25rem; background: var(--shelf-plank); border-radius: 2px;
+      position: relative; box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .shelf-plank::before {
+      content: ''; position: absolute; top: -8px; left: 0; right: 0;
+      height: 8px; background: rgba(0,0,0,0.45); filter: blur(4px);
+    }
+    .shelf-plank::after {
+      content: ''; position: absolute; top: 7px; left: 0; right: 0;
+      height: 2px; background: rgba(255,255,255,0.08);
+    }
+
+    .empty-state {
+      padding: 5rem 0; text-align: center; color: var(--text-3);
+      display: flex; flex-direction: column; align-items: center; gap: 1rem;
+    }
+    .empty-state p { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; }
+
+    /* LOADER */
+    .loader {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; padding: 5rem; gap: 1rem; color: var(--text-3);
+    }
+    .loader p { font-size: 13px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 0.9s linear infinite; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 200;
+      display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+      background: rgba(0,0,0,0.68); backdrop-filter: blur(14px);
+      animation: fadeIn 0.2s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    .modal {
+      width: 100%; max-width: 26rem; border-radius: var(--radius-lg);
+      background: var(--surface); color: var(--text-1); overflow: hidden;
+      position: relative; box-shadow: var(--shadow-modal);
+      animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes modalIn {
+      from { transform: scale(0.9) translateY(12px); opacity: 0; }
+      to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .modal-close {
+      position: absolute; top: 0.875rem; right: 0.875rem; z-index: 10;
+      width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+      background: rgba(0,0,0,0.28); color: white;
+      display: flex; align-items: center; justify-content: center;
+      transition: background var(--transition);
+    }
+    .modal-close:hover { background: rgba(0,0,0,0.5); }
+    .modal-cover { position: relative; }
+    .modal-img { width: 100%; height: 11rem; object-fit: cover; display: block; }
+    .modal-img-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.1) 55%, transparent 100%);
+    }
+    .modal-meta {
+      position: absolute; bottom: 1rem; left: 1.25rem; right: 1.25rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-cat {
+      font-size: 9px; font-weight: 900; color: white; text-transform: uppercase;
+      letter-spacing: 0.12em; padding: 0.25rem 0.6rem; border-radius: 6px;
+    }
+    .modal-date { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.65); }
+    .modal-body { padding: 1.25rem 1.5rem 1.5rem; }
+    .modal-title {
+      font-family: var(--font-display); font-size: 1.5rem; font-weight: 700;
+      letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 0.875rem;
+    }
+    .modal-summary {
+      font-size: 13px; line-height: 1.75; font-style: italic;
+      border-left: 3px solid var(--accent-bg); padding-left: 0.875rem;
+      color: var(--text-2); margin-bottom: 1.25rem;
+    }
+    .modal-divider { height: 0.5px; background: var(--border); margin-bottom: 1rem; }
+    .modal-actions { display: flex; flex-direction: column; gap: 0.625rem; }
+    .btn-read {
+      width: 100%; padding: 0.8rem; border-radius: var(--radius-md);
+      font-size: 12px; font-weight: 900; font-family: var(--font-body);
+      border: 0.5px solid var(--border); cursor: pointer;
+      transition: all var(--transition);
+      display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      background: var(--bg-2); color: var(--text-2);
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .btn-read:hover { background: var(--bg); }
+    .btn-read.done { background: var(--danger); color: white; border-color: transparent; box-shadow: 0 4px 16px rgba(220,38,38,0.3); }
+    .btn-link {
+      width: 100%; padding: 0.875rem; border-radius: var(--radius-md);
+      font-size: 12px; font-weight: 900; font-family: var(--font-body);
+      border: none; cursor: pointer; background: var(--accent-2); color: white;
+      text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      box-shadow: 0 6px 20px rgba(245,158,11,0.35);
+      transition: background var(--transition), transform var(--transition);
+    }
+    .btn-link:hover { background: var(--accent); transform: translateY(-1px); }
+
+    .footer {
+      padding: 3rem 0; text-align: center; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.3em; color: var(--text-3); opacity: 0.4;
+    }
+
+    /* AUTH BUTTON */
+    .auth-btn {
+      padding: 0.4rem 0.9rem;
+      border-radius: var(--radius-sm);
+      font-size: 11px; font-weight: 900; font-family: var(--font-body);
+      text-transform: uppercase; letter-spacing: 0.08em;
+      border: 0.5px solid var(--border); cursor: pointer;
+      transition: all var(--transition);
+    }
+    .auth-btn.signin { background: var(--accent-2); color: white; border-color: var(--accent); box-shadow: 0 3px 10px rgba(245,158,11,0.3); }
+    .auth-btn.signin:hover { background: var(--accent); }
+    .auth-btn.signout { background: var(--bg-2); color: var(--text-2); }
+    .auth-btn.signout:hover { background: var(--bg); color: var(--danger); border-color: var(--danger); }
+
+    /* AUTH MODAL */
+    .auth-overlay {
+      position: fixed; inset: 0; z-index: 300;
+      display: flex; align-items: center; justify-content: center; padding: 1.5rem;
+      background: rgba(0,0,0,0.72); backdrop-filter: blur(16px);
+      animation: fadeIn 0.2s ease;
+    }
+    .auth-modal {
+      width: 100%; max-width: 22rem;
+      background: var(--surface); color: var(--text-1);
+      border-radius: var(--radius-lg);
+      padding: 2.25rem 2rem 2rem;
+      position: relative; box-shadow: var(--shadow-modal);
+      animation: modalIn 0.28s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .auth-modal h2 { font-family: var(--font-display); font-size: 1.75rem; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 0.3rem; }
+    .auth-modal .auth-subtitle { font-size: 12px; color: var(--text-3); margin-bottom: 1.5rem; }
+    .auth-field { display: flex; flex-direction: column; gap: 0.375rem; margin-bottom: 0.875rem; }
+    .auth-field label { font-size: 10px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.15em; color: var(--text-3); }
+    .auth-field input {
+      padding: 0.75rem 1rem; background: var(--bg-2); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 14px; font-family: var(--font-body);
+      color: var(--text-1); outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .auth-field input::placeholder { color: var(--text-3); }
+    .auth-field input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-bg); }
+    .auth-submit {
+      width: 100%; padding: 0.875rem; margin-top: 0.5rem;
+      border-radius: var(--radius-md); font-size: 13px; font-weight: 900;
+      font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.08em;
+      border: none; cursor: pointer; background: var(--accent-2); color: white;
+      box-shadow: 0 6px 20px rgba(245,158,11,0.35);
+      transition: background var(--transition), transform var(--transition);
+    }
+    .auth-submit:hover { background: var(--accent); transform: translateY(-1px); }
+    .auth-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .auth-error { font-size: 12px; color: var(--danger); margin-top: 0.5rem; padding: 0.5rem 0.75rem; background: rgba(220,38,38,0.08); border-radius: var(--radius-sm); display: none; }
+    .auth-error.show { display: block; }
+    .auth-divider { height: 0.5px; background: var(--border); margin: 1.25rem 0; }
+    .auth-switch { text-align: center; font-size: 12px; color: var(--text-3); }
+    .auth-switch button { background: none; border: none; cursor: pointer; color: var(--accent); font-weight: 700; font-family: var(--font-body); font-size: 12px; padding: 0; text-decoration: underline; }
+    .google-btn {
+      width: 100%; padding: 0.75rem; border-radius: var(--radius-md);
+      font-size: 13px; font-weight: 700; font-family: var(--font-body);
+      border: 0.5px solid var(--border-2); cursor: pointer;
+      background: var(--surface); color: var(--text-1);
+      display: flex; align-items: center; justify-content: center; gap: 0.625rem;
+      transition: background var(--transition), box-shadow var(--transition);
+    }
+    .google-btn:hover { background: var(--bg-2); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .auth-or {
+      display: flex; align-items: center; gap: 0.75rem;
+      margin: 1rem 0 0.75rem; color: var(--text-3); font-size: 11px;
+    }
+    .auth-or::before, .auth-or::after { content: ''; flex: 1; height: 0.5px; background: var(--border); }
+    .anon-btn {
+      width: 100%; padding: 0.6rem; margin-top: 0.5rem;
+      border-radius: var(--radius-md); font-size: 11px; font-weight: 700;
+      font-family: var(--font-body); border: 0.5px solid var(--border);
+      cursor: pointer; background: transparent; color: var(--text-3);
+      transition: all var(--transition);
+    }
+    .anon-btn:hover { color: var(--text-1); background: var(--bg-2); }
+
+    /* REACTION */
+    .reaction-wrap {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.875rem 1rem; margin: 0.5rem 0;
+      background: var(--bg-2); border-radius: var(--radius-md);
+      border: 0.5px solid var(--border);
+    }
+    .reaction-label { font-size: 11px; font-weight: 700; color: var(--text-3); white-space: nowrap; }
+    .reaction-btns { display: flex; gap: 0.5rem; }
+    .reaction-btn {
+      padding: 0.4rem 0.9rem; border-radius: 99px;
+      font-size: 12px; font-weight: 700; font-family: var(--font-body);
+      border: 0.5px solid var(--border-2); cursor: pointer;
+      background: var(--surface); color: var(--text-2);
+      transition: all var(--transition);
+    }
+    .reaction-btn:hover { transform: scale(1.06); }
+    .reaction-btn.like.active  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+    .reaction-btn.dislike.active { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+    .dark .reaction-btn.like.active  { background: #064e3b; color: #6ee7b7; border-color: #065f46; }
+    .dark .reaction-btn.dislike.active { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
+
+    /* COMMENTS */
+    .comments-section {
+      margin-top: 1rem; border-top: 0.5px solid var(--border); padding-top: 1rem;
+    }
+    .comments-title {
+      font-size: 11px; font-weight: 900; text-transform: uppercase;
+      letter-spacing: 0.1em; color: var(--text-3);
+      display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.75rem;
+    }
+    .comments-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; max-height: 220px; overflow-y: auto; }
+    .comment-empty { font-size: 12px; color: var(--text-3); text-align: center; padding: 1rem 0; }
+    .comment-item {
+      background: var(--bg-2); border-radius: var(--radius-sm);
+      padding: 0.625rem 0.75rem; border: 0.5px solid var(--border);
+    }
+    .comment-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+    .comment-nick { font-size: 11px; font-weight: 900; color: var(--accent); }
+    .comment-time { font-size: 10px; color: var(--text-3); margin-left: auto; }
+    .comment-del {
+      font-size: 10px; background: none; border: none; cursor: pointer;
+      color: var(--text-3); padding: 0; transition: color var(--transition);
+    }
+    .comment-del:hover { color: var(--danger); }
+    .comment-text { font-size: 13px; color: var(--text-1); line-height: 1.5; }
+    .comment-input-wrap { display: flex; gap: 0.5rem; }
+    .comment-input {
+      flex: 1; padding: 0.6rem 0.875rem;
+      background: var(--bg-2); border: 0.5px solid var(--border);
+      border-radius: var(--radius-sm); font-size: 13px; font-family: var(--font-body);
+      color: var(--text-1); outline: none;
+      transition: border-color var(--transition);
+    }
+    .comment-input:focus { border-color: var(--accent); }
+    .comment-input::placeholder { color: var(--text-3); }
+    .comment-submit {
+      padding: 0.6rem 1rem; border-radius: var(--radius-sm);
+      font-size: 12px; font-weight: 900; font-family: var(--font-body);
+      border: none; cursor: pointer; background: var(--accent-2); color: white;
+      transition: background var(--transition);
+      white-space: nowrap;
+    }
+    .comment-submit:hover { background: var(--accent); }
+    .comment-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .comment-login-hint { font-size: 12px; color: var(--text-3); text-align: center; padding: 0.5rem 0; }
+
+    @media (max-width: 768px) {
+      .shelf-box { padding: 1.25rem 0.75rem; border-left-width: 12px; border-right-width: 12px; border-radius: 1.5rem; }
+      .sort-group { border-left: none; padding-left: 0; margin-left: 0; }
+      .controls { width: 100%; }
+      .search-input { width: 140px; }
+      .book-preview { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     CONFIGURATION — 이 값들만 수정하면 됩니다
+     ============================================================ -->
+<script>
+const CONFIG = {
+  sheetUrl:       "https://docs.google.com/spreadsheets/d/e/2PACX-1vT3pGwZSM-xiNIE79HRbOW_E4ldgeOy9MtWNzzoZB6ma7ksrjRugeM055ME2xKO7xzp84cG7VgOoaEq/pub?gid=0&single=true&output=csv",
+  storageKey:     "grand-shelf-v3",
+  booksPerRow:    10,
+  genres:         ['전체', '모험', '판타지', 'SF', '요리', '인문'],
+  ages:           ['전체', '아동', '청소년', '성인'],
+  catColors: {
+    '모험':  '#7f1d1d',
+    '판타지':'#4c1d95',
+    'SF':    '#1e3a5f',
+    '요리':  '#064e3b',
+    '인문':  '#78350f',
+  },
+  defaultCatColor: '#292524',
+};
+</script>
+
+<div class="page" id="app">
+  <div class="container">
+    <div class="header">
+      <div class="header-top">
+        <div class="brand">
+          <h1>
+            <svg class="brand-icon" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            Grand Shelf
+          </h1>
+          <div class="brand-nickname" id="brand-nickname"></div>
+          <div class="brand-meta">
+            <span class="user-chip" id="user-chip">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              게스트
+            </span>
+            <span class="stat-chip" id="stat-chip">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              0권 읽음
+            </span>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-track">
+              <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+            </div>
+            <span class="progress-label" id="progress-label">0 / 0권</span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="search-wrap">
+            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input class="search-input" type="text" id="search-input" placeholder="제목 검색..." autocomplete="off" />
+          </div>
+          <button class="auth-btn signin" id="auth-btn">Sign In</button>
+          <button class="icon-btn" id="dark-btn" title="다크모드 전환">
+            <svg id="dark-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="filter-bar" id="filter-bar">
+        <div class="filter-group">
+          <div class="filter-label">Genre</div>
+          <div class="filter-pills" id="genre-pills"></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">Age</div>
+          <div class="filter-pills" id="age-pills"></div>
+        </div>
+        <div class="filter-group">
+          <div class="filter-label">Status</div>
+          <div class="filter-pills">
+            <button class="pill active" data-type="readStatus" data-val="전체">전체</button>
+            <button class="pill" data-type="readStatus" data-val="읽음">읽음</button>
+            <button class="pill" data-type="readStatus" data-val="미읽음">미읽음</button>
+          </div>
+        </div>
+        <div class="sort-group">
+          <div class="filter-label">Sort</div>
+          <div class="sort-row">
+            <div class="sort-toggle">
+              <button class="sort-btn active" data-sort="최신순">최신순</button>
+              <button class="sort-btn" data-sort="오래된순">오래된순</button>
+            </div>
+            <button class="shuffle-btn" id="shuffle-btn" title="랜덤 셔플">
+              <svg id="shuffle-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="16 3 21 3 21 8"/>
+                <line x1="4" y1="20" x2="21" y2="3"/>
+                <polyline points="21 16 21 21 16 21"/>
+                <line x1="15" y1="15" x2="21" y2="21"/>
+                <line x1="4" y1="4" x2="9" y2="9"/>
+              </svg>
+              Shuffle
+            </button>
+          </div>
+        </div>
+        <div class="filter-footer">
+          <span class="result-count" id="result-count">전체 <strong>0</strong>권</span>
+          <button class="reset-btn" id="reset-btn">필터 초기화</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="shelf-container">
+    <div class="shelf-box" id="shelf-box">
+      <div class="loader">
+        <svg class="spin" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+          <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/>
+          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+          <line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/>
+          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+        </svg>
+        <p>책장 불러오는 중…</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Grand Shelf Archive &bull; Est. 2024</div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp }                        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged,
+         signInWithEmailAndPassword,
+         createUserWithEmailAndPassword,
+         updateProfile,
+         signInWithPopup, GoogleAuthProvider,
+         signInAnonymously, signOut as fbSignOut }
+                                                from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc,
+         onSnapshot, collection,
+         addDoc, getDocs, query, orderBy, deleteDoc, serverTimestamp }
+                                                from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+/* ============================================================
+   FIREBASE INIT
+   ============================================================ */
+const firebaseConfig = {
+  apiKey:            "AIzaSyBduooVFCkAQAV5prkX8qqFcjgIZpShdNk",
+  authDomain:        "muhan-shelf.firebaseapp.com",
+  projectId:         "muhan-shelf",
+  storageBucket:     "muhan-shelf.firebasestorage.app",
+  messagingSenderId: "401875407312",
+  appId:             "1:401875407312:web:1fe6c936ebea44c8cfe9d5",
+  measurementId:     "G-1L8GM7ZS6B"
+};
+const app      = initializeApp(firebaseConfig);
+const auth     = getAuth(app);
+const db       = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let allBooks     = [];
+let interactions = {};
+let filter       = { genre: '전체', age: '전체', readStatus: '전체', sortBy: '최신순' };
+let randomOrder  = [];
+let isDark       = false;
+let currentUser  = null;
+let unsubInteractions = null; // Firestore 실시간 리스너 해제용
+
+/* ============================================================
+   HELPERS
+   ============================================================ */
+function getCatColor(cat) { return CONFIG.catColors[cat] || CONFIG.defaultCatColor; }
+function getReadCount()   { return Object.values(interactions).filter(i => i.isRead).length; }
+
+/* ============================================================
+   FIRESTORE — 읽음 기록 실시간 동기화
+   ============================================================ */
+function subscribeInteractions(uid) {
+  if (unsubInteractions) unsubInteractions();
+  const colRef = collection(db, 'users', uid, 'interactions');
+  unsubInteractions = onSnapshot(colRef, snap => {
+    interactions = {};
+    snap.forEach(d => { interactions[d.id] = d.data(); });
+    updateStats();
+    renderShelf();
+  });
+}
+
+async function saveInteraction(bookId, updates) {
+  if (!currentUser) return;
+  // 낙관적 업데이트 — Firestore snapshot 오기 전에 로컬 즉시 반영
+  interactions[bookId] = { bookId, ...interactions[bookId], ...updates, updatedAt: new Date().toISOString() };
+  updateStats();
+  renderShelf();
+  const ref = doc(db, 'users', currentUser.uid, 'interactions', bookId);
+  await setDoc(ref, interactions[bookId], { merge: true });
+}
+
+/* ============================================================
+   AUTH STATE LISTENER
+   ============================================================ */
+onAuthStateChanged(auth, user => {
+  currentUser = user;
+  if (user) {
+    subscribeInteractions(user.uid);
+  } else {
+    if (unsubInteractions) { unsubInteractions(); unsubInteractions = null; }
+    interactions = {};
+  }
+  updateAuthUI();
+  updateStats();
+  renderShelf();
+});
+
+/* ============================================================
+   AUTH ACTIONS
+   ============================================================ */
+async function doSignOut() {
+  await fbSignOut(auth);
+}
+
+async function doGoogleSignIn() {
+  try {
+    await signInWithPopup(auth, googleProvider);
+    closeAuthModal();
+  } catch (e) {
+    return e.message;
+  }
+}
+
+async function doEmailSignIn(email, password) {
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    return null;
+  } catch (e) {
+    const msgs = {
+      'auth/user-not-found':   '존재하지 않는 계정입니다.',
+      'auth/wrong-password':   '비밀번호가 올바르지 않습니다.',
+      'auth/invalid-credential':'이메일 또는 비밀번호가 올바르지 않습니다.',
+      'auth/too-many-requests':'잠시 후 다시 시도해주세요.',
+    };
+    return msgs[e.code] || e.message;
+  }
+}
+
+async function doEmailSignUp(email, password, nickname) {
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    if (nickname) {
+      await updateProfile(cred.user, { displayName: nickname });
+      await setDoc(doc(db, 'users', cred.user.uid), {
+        nickname, email, createdAt: new Date().toISOString()
+      }, { merge: true });
+    }
+    return null;
+  } catch (e) {
+    const msgs = {
+      'auth/email-already-in-use':'이미 가입된 이메일입니다.',
+      'auth/weak-password':        '비밀번호는 6자 이상이어야 합니다.',
+      'auth/invalid-email':        '이메일 형식이 올바르지 않습니다.',
+    };
+    return msgs[e.code] || e.message;
+  }
+}
+
+async function doAnonymousSignIn() {
+  try {
+    await signInAnonymously(auth);
+    closeAuthModal();
+  } catch (e) {
+    return e.message;
+  }
+}
+
+/* ============================================================
+   AUTH UI
+   ============================================================ */
+function updateAuthUI() {
+  const chip    = document.getElementById('user-chip');
+  const btn     = document.getElementById('auth-btn');
+  const nickEl  = document.getElementById('brand-nickname');
+  if (!chip || !btn) return;
+
+  if (currentUser && !currentUser.isAnonymous) {
+    const nickname = currentUser.displayName || currentUser.email?.split('@')[0] || '로그인됨';
+    chip.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${nickname}`;
+    if (nickEl) nickEl.textContent = nickname + '의 책장';
+    btn.textContent  = 'Sign Out';
+    btn.className    = 'auth-btn signout';
+    btn.onclick      = doSignOut;
+  } else if (currentUser && currentUser.isAnonymous) {
+    chip.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 익명 사용자`;
+    if (nickEl) nickEl.textContent = '';
+    btn.textContent  = 'Sign In';
+    btn.className    = 'auth-btn signin';
+    btn.onclick      = () => openAuthModal('login');
+  } else {
+    chip.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 게스트`;
+    if (nickEl) nickEl.textContent = '';
+    btn.textContent  = 'Sign In';
+    btn.className    = 'auth-btn signin';
+    btn.onclick      = () => openAuthModal('login');
+  }
+}
+
+function openAuthModal(mode = 'login') {
+  closeAuthModal();
+  const overlay = document.createElement('div');
+  overlay.className = 'auth-overlay';
+  overlay.id        = 'auth-overlay';
+  overlay.innerHTML = `
+    <div class="auth-modal">
+      <button class="modal-close" id="auth-close" aria-label="닫기">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      <h2>${mode === 'login' ? 'Welcome Back' : 'Join Us'}</h2>
+      <p class="auth-subtitle">${mode === 'login' ? '로그인하면 읽음 기록이 저장됩니다.' : '계정을 만들고 독서 여정을 기록하세요.'}</p>
+
+      <!-- Google 로그인 -->
+      <button class="google-btn" id="google-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Google로 계속하기
+      </button>
+
+      <div class="auth-or"><span>또는</span></div>
+
+      ${mode === 'signup' ? `<div class="auth-field">
+        <label>닉네임</label>
+        <input type="text" id="auth-nickname" placeholder="화면에 표시될 이름" autocomplete="nickname" maxlength="20" />
+      </div>` : ''}
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="example@email.com" autocomplete="email" />
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div class="auth-error" id="auth-error"></div>
+      <button class="auth-submit" id="auth-submit">${mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}</button>
+
+      <button class="anon-btn" id="anon-btn">익명으로 둘러보기</button>
+
+      <div class="auth-divider"></div>
+      <div class="auth-switch">
+        ${mode === 'login'
+          ? `계정이 없으신가요? <button id="auth-mode-toggle">회원가입</button>`
+          : `이미 계정이 있으신가요? <button id="auth-mode-toggle">로그인</button>`}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  const emailInput = document.getElementById('auth-email');
+  const passInput  = document.getElementById('auth-password');
+  const errEl      = document.getElementById('auth-error');
+  const submitBtn  = document.getElementById('auth-submit');
+
+  document.getElementById('auth-close').addEventListener('click', closeAuthModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeAuthModal(); });
+  document.getElementById('auth-mode-toggle').addEventListener('click', () => {
+    closeAuthModal(); openAuthModal(mode === 'login' ? 'signup' : 'login');
+  });
+  document.getElementById('google-btn').addEventListener('click', async () => {
+    const err = await doGoogleSignIn();
+    if (err) { errEl.textContent = err; errEl.classList.add('show'); }
+  });
+  document.getElementById('anon-btn').addEventListener('click', async () => {
+    await doAnonymousSignIn();
+  });
+
+  async function handleSubmit() {
+    const email    = emailInput.value.trim();
+    const password = passInput.value;
+    errEl.classList.remove('show');
+    if (!email || !password) { errEl.textContent = '이메일과 비밀번호를 입력해주세요.'; errEl.classList.add('show'); return; }
+    submitBtn.disabled = true; submitBtn.textContent = '처리 중…';
+    const nickname = document.getElementById('auth-nickname')?.value.trim() || '';
+    if (mode === 'signup' && !nickname) { errEl.textContent = '닉네임을 입력해주세요.'; errEl.classList.add('show'); submitBtn.disabled = false; submitBtn.textContent = '이메일로 회원가입'; return; }
+    const err = mode === 'login'
+      ? await doEmailSignIn(email, password)
+      : await doEmailSignUp(email, password, nickname);
+    submitBtn.disabled = false;
+    submitBtn.textContent = mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입';
+    if (err) { errEl.textContent = err; errEl.classList.add('show'); return; }
+    closeAuthModal();
+  }
+
+  submitBtn.addEventListener('click', handleSubmit);
+  passInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleSubmit(); });
+  setTimeout(() => emailInput.focus(), 100);
+}
+
+function closeAuthModal() {
+  const el = document.getElementById('auth-overlay');
+  if (el) el.remove();
+}
+
+/* ============================================================
+   STATS
+   ============================================================ */
+function updateStats() {
+  const rc  = getReadCount();
+  const tot = allBooks.length;
+  const pct = tot ? Math.round(rc / tot * 100) : 0;
+  const chip = document.getElementById('stat-chip');
+  const fill = document.getElementById('progress-fill');
+  const lbl  = document.getElementById('progress-label');
+  if (chip) chip.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg> ${rc}권 읽음 (${pct}%)`;
+  if (fill) fill.style.width = pct + '%';
+  if (lbl)  lbl.textContent  = `${rc} / ${tot}권`;
+}
+
+/* ============================================================
+   FILTER & SORT
+   ============================================================ */
+function getFilteredBooks() {
+  const s = document.getElementById('search-input').value.toLowerCase().trim();
+  let result = allBooks.filter(b => {
+    if (s && !b.title?.toLowerCase().includes(s)) return false;
+    if (filter.genre !== '전체' && b.category !== filter.genre) return false;
+    if (filter.age   !== '전체' && b.age      !== filter.age)   return false;
+    if (filter.readStatus === '읽음'   &&  !interactions[b.id]?.isRead) return false;
+    if (filter.readStatus === '미읽음' &&   interactions[b.id]?.isRead) return false;
+    return true;
+  });
+  if (filter.sortBy === '랜덤' && randomOrder.length) {
+    result.sort((a, b) => randomOrder.indexOf(a.id) - randomOrder.indexOf(b.id));
+  } else if (filter.sortBy === '최신순') {
+    result.sort((a, b) => new Date(b.date) - new Date(a.date));
+  } else {
+    result.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }
+  return result;
+}
+
+/* ============================================================
+   RENDER SHELF
+   ============================================================ */
+function renderShelf() {
+  const books = getFilteredBooks();
+  const box   = document.getElementById('shelf-box');
+  if (!box) return;
+  const N = CONFIG.booksPerRow;
+
+  const rc = document.getElementById('result-count');
+  if (rc) rc.innerHTML = `검색 결과 <strong>${books.length}</strong>권 / 전체 ${allBooks.length}권`;
+
+  if (!books.length) {
+    box.innerHTML = `<div class="empty-state"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><p>No books found</p></div>`;
+    return;
+  }
+
+  const rows = [];
+  for (let i = 0; i < Math.ceil(books.length / N); i++) rows.push(books.slice(i * N, (i + 1) * N));
+
+  box.innerHTML = rows.map(row => `
+    <div class="shelf-row">
+      <div class="books-grid">
+        ${Array.from({ length: N }).map((_, ci) => {
+          const b = row[ci];
+          if (!b) return `<div class="book-slot"></div>`;
+          const isRead = interactions[b.id]?.isRead;
+          const color  = getCatColor(b.category);
+          const hasImg = b.imgLink && b.imgLink.startsWith('http');
+          return `
+            <div class="book-slot">
+              ${hasImg ? `<div class="book-preview">
+                <img class="preview-img" src="${b.imgLink}" alt="" loading="lazy" />
+                <div class="preview-title">${b.title || ''}</div>
+                <div class="preview-cat">${b.category || ''}</div>
+              </div>` : ''}
+              <div class="book-spine" style="background:${color}" data-id="${b.id}">
+                <span class="book-title-text">${b.title || ''}</span>
+                ${isRead ? `<div class="read-ribbon"><svg width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></div>` : ''}
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+      <div class="shelf-plank"></div>
+    </div>
+  `).join('');
+
+  box.querySelectorAll('.book-spine').forEach(el => {
+    el.addEventListener('click', () => {
+      const book = allBooks.find(b => b.id === el.dataset.id);
+      if (book) openModal(book);
+    });
+  });
+}
+
+/* ============================================================
+   COMMENTS — Firestore books/{bookId}/comments
+   ============================================================ */
+async function loadComments(bookId) {
+  const colRef = collection(db, 'books', bookId, 'comments');
+  const q = query(colRef, orderBy('createdAt', 'asc'));
+  const snap = await getDocs(q);
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function addComment(bookId, text) {
+  if (!currentUser || !text.trim()) return;
+  const nickname = currentUser.displayName || currentUser.email?.split('@')[0] || '익명';
+  await addDoc(collection(db, 'books', bookId, 'comments'), {
+    uid: currentUser.uid, nickname,
+    text: text.trim(),
+    createdAt: serverTimestamp()
+  });
+}
+
+async function deleteComment(bookId, commentId) {
+  await deleteDoc(doc(db, 'books', bookId, 'comments', commentId));
+}
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+async function openModal(book) {
+  closeModal();
+  const isRead   = interactions[book.id]?.isRead;
+  const reaction = interactions[book.id]?.reaction; // 'like' | 'dislike' | null
+  const color    = getCatColor(book.category);
+  const comments = await loadComments(book.id);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.id        = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <button class="modal-close" id="modal-close" aria-label="닫기">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+      ${book.imgLink ? `<div class="modal-cover">
+        <img class="modal-img" src="${book.imgLink}" alt="" />
+        <div class="modal-img-overlay"></div>
+        <div class="modal-meta">
+          <span class="modal-cat" style="background:${color}">${book.category || ''}</span>
+          <span class="modal-date">${book.date || ''}</span>
+        </div>
+      </div>` : ''}
+      <div class="modal-body">
+        <div class="modal-title">${book.title || ''}</div>
+        <div class="modal-summary">"${book.summary || '소개글이 없습니다.'}"</div>
+        <div class="modal-divider"></div>
+
+        <!-- 읽기 버튼 -->
+        <div class="modal-actions">
+          <button class="btn-read ${isRead ? 'done' : ''}" id="read-toggle">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            ${isRead ? '완독 완료 ✓' : '다 읽었어요'}
+          </button>
+        </div>
+
+        <!-- 반응 (읽은 경우에만) -->
+        ${isRead ? `
+        <div class="reaction-wrap">
+          <span class="reaction-label">이 책 어땠나요?</span>
+          <div class="reaction-btns">
+            <button class="reaction-btn like ${reaction === 'like' ? 'active' : ''}" id="btn-like">
+              👍 좋아요
+            </button>
+            <button class="reaction-btn dislike ${reaction === 'dislike' ? 'active' : ''}" id="btn-dislike">
+              👎 별로에요
+            </button>
+          </div>
+        </div>` : ''}
+
+        <!-- 작품 링크 -->
+        ${book.link && book.link !== '#' ? `<a href="${book.link}" target="_blank" rel="noopener noreferrer" class="btn-link">
+          작품 바로가기
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+            <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </a>` : ''}
+
+        <!-- 댓글 -->
+        <div class="comments-section">
+          <div class="comments-title">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            댓글 ${comments.length}
+          </div>
+          <div class="comments-list" id="comments-list">
+            ${comments.length === 0
+              ? `<div class="comment-empty">첫 번째 댓글을 남겨보세요!</div>`
+              : comments.map(c => `
+                <div class="comment-item" data-cid="${c.id}">
+                  <div class="comment-header">
+                    <span class="comment-nick">${c.nickname || '익명'}</span>
+                    <span class="comment-time">${c.createdAt?.toDate ? new Date(c.createdAt.toDate()).toLocaleDateString('ko-KR') : ''}</span>
+                    ${currentUser && c.uid === currentUser.uid
+                      ? `<button class="comment-del" data-cid="${c.id}">삭제</button>` : ''}
+                  </div>
+                  <div class="comment-text">${c.text}</div>
+                </div>`).join('')
+            }
+          </div>
+          ${currentUser && !currentUser.isAnonymous ? `
+          <div class="comment-input-wrap">
+            <input class="comment-input" id="comment-input" type="text" placeholder="댓글을 입력하세요..." maxlength="200" />
+            <button class="comment-submit" id="comment-submit">등록</button>
+          </div>` : `<div class="comment-login-hint">댓글을 달려면 <button id="comment-login-btn" style="background:none;border:none;cursor:pointer;color:var(--accent);font-weight:700;text-decoration:underline;">로그인</button>이 필요합니다.</div>`}
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // 기본 이벤트
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+  // 읽음 토글
+  document.getElementById('read-toggle').addEventListener('click', async () => {
+    if (!currentUser) { closeModal(); openAuthModal('login'); return; }
+    const newVal = !interactions[book.id]?.isRead;
+    await saveInteraction(book.id, { isRead: newVal, ...(newVal ? {} : { reaction: null }) });
+    openModal(book);
+  });
+
+  // 반응 버튼
+  document.getElementById('btn-like')?.addEventListener('click', async () => {
+    const cur = interactions[book.id]?.reaction;
+    await saveInteraction(book.id, { reaction: cur === 'like' ? null : 'like' });
+    openModal(book);
+  });
+  document.getElementById('btn-dislike')?.addEventListener('click', async () => {
+    const cur = interactions[book.id]?.reaction;
+    await saveInteraction(book.id, { reaction: cur === 'dislike' ? null : 'dislike' });
+    openModal(book);
+  });
+
+  // 댓글 등록
+  const commentInput  = document.getElementById('comment-input');
+  const commentSubmit = document.getElementById('comment-submit');
+  async function submitComment() {
+    const text = commentInput?.value.trim();
+    if (!text) return;
+    commentSubmit.disabled = true;
+    await addComment(book.id, text);
+    openModal(book); // 댓글 포함 재렌더
+  }
+  commentSubmit?.addEventListener('click', submitComment);
+  commentInput?.addEventListener('keydown', e => { if (e.key === 'Enter') submitComment(); });
+
+  // 댓글 삭제
+  document.querySelectorAll('.comment-del').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      await deleteComment(book.id, btn.dataset.cid);
+      openModal(book);
+    });
+  });
+
+  // 로그인 유도
+  document.getElementById('comment-login-btn')?.addEventListener('click', () => {
+    closeModal(); openAuthModal('login');
+  });
+}
+
+function closeModal() {
+  const el = document.getElementById('modal-overlay');
+  if (el) el.remove();
+}
+
+/* ============================================================
+   FILTER PILLS
+   ============================================================ */
+function buildFilterPills() {
+  const genres = CONFIG.genres.length > 1 ? CONFIG.genres : ['전체', ...new Set(allBooks.map(b => b.category).filter(Boolean))];
+  const ages   = CONFIG.ages.length   > 1 ? CONFIG.ages   : ['전체', ...new Set(allBooks.map(b => b.age).filter(Boolean))];
+
+  document.getElementById('genre-pills').innerHTML = genres.map(g =>
+    `<button class="pill${filter.genre === g ? ' active' : ''}" data-type="genre" data-val="${g}">${g}</button>`
+  ).join('');
+  document.getElementById('age-pills').innerHTML = ages.map(a =>
+    `<button class="pill${filter.age === a ? ' active' : ''}" data-type="age" data-val="${a}">${a}</button>`
+  ).join('');
+
+  document.querySelectorAll('.pill').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const { type, val } = btn.dataset;
+      filter[type] = val;
+      document.querySelectorAll(`.pill[data-type="${type}"]`).forEach(b => b.classList.toggle('active', b.dataset.val === val));
+      renderShelf();
+    });
+  });
+}
+
+function resetFilters() {
+  filter = { genre: '전체', age: '전체', readStatus: '전체', sortBy: '최신순' };
+  randomOrder = [];
+  document.getElementById('search-input').value = '';
+  document.querySelectorAll('.pill').forEach(b => b.classList.toggle('active', b.dataset.val === '전체'));
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === '최신순'));
+  document.getElementById('shuffle-btn').classList.remove('active');
+  renderShelf();
+}
+
+/* ============================================================
+   CSV PARSER
+   ============================================================ */
+function parseCSV(text) {
+  const rows = [];
+  let field = '', row = [], inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i], next = text[i + 1];
+    if (inQuote) {
+      if (ch === '"' && next === '"') { field += '"'; i++; }
+      else if (ch === '"') inQuote = false;
+      else field += ch;
+    } else {
+      if (ch === '"') inQuote = true;
+      else if (ch === ',') { row.push(field); field = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && next === '\n') i++;
+        row.push(field); field = '';
+        if (row.some(c => c !== '')) rows.push(row);
+        row = [];
+      } else field += ch;
+    }
+  }
+  if (field || row.length) { row.push(field); if (row.some(c => c !== '')) rows.push(row); }
+  return rows;
+}
+function csvToObjects(text) {
+  const rows = parseCSV(text.trim());
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(h => h.trim());
+  return rows.slice(1).map(vals => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (vals[i] || '').trim(); });
+    return obj;
+  }).filter(o => o.id);
+}
+
+/* ============================================================
+   EVENT LISTENERS
+   ============================================================ */
+document.getElementById('search-input').addEventListener('input', () => renderShelf());
+
+document.querySelectorAll('.sort-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    filter.sortBy = btn.dataset.sort;
+    document.querySelectorAll('.sort-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === filter.sortBy));
+    document.getElementById('shuffle-btn').classList.remove('active');
+    renderShelf();
+  });
+});
+
+document.getElementById('shuffle-btn').addEventListener('click', () => {
+  filter.sortBy = '랜덤';
+  randomOrder   = [...allBooks].sort(() => Math.random() - 0.5).map(b => b.id);
+  document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('shuffle-btn').classList.add('active');
+  const icon = document.getElementById('shuffle-icon');
+  icon.style.animation = 'spin 0.45s ease';
+  setTimeout(() => { icon.style.animation = ''; }, 450);
+  renderShelf();
+});
+
+document.getElementById('reset-btn').addEventListener('click', resetFilters);
+
+document.getElementById('dark-btn').addEventListener('click', () => {
+  isDark = !isDark;
+  document.getElementById('app').classList.toggle('dark', isDark);
+  document.getElementById('dark-btn').classList.toggle('active', isDark);
+  const icon = document.getElementById('dark-icon');
+  icon.innerHTML = isDark
+    ? `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>`
+    : `<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>`;
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeModal(); closeAuthModal(); }
+});
+
+/* ============================================================
+   DATA LOADING
+   ============================================================ */
+async function loadData() {
+  try {
+    const res = await fetch(CONFIG.sheetUrl);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    allBooks = csvToObjects(text);
+    if (!allBooks.length) throw new Error('empty');
+  } catch (err) {
+    console.warn('Sheet load failed, using sample data:', err.message);
+    allBooks = Array.from({ length: 40 }, (_, i) => ({
+      id: `sample-${i+1}`, title: i === 0 ? '방망이를 찾아서' : `도서 제목 ${i+1}`,
+      category: ['모험','판타지','SF','요리','인문'][i%5], age: ['아동','청소년','성인'][i%3],
+      summary: i === 0 ? '도깨비가 잃어버린 방망이를 찾는 이야기.' : '신비로운 책의 내용을 곧 만나보실 수 있습니다.',
+      date: `2024-05-${String(30-(i%30)).padStart(2,'0')}`,
+      imgLink: `https://picsum.photos/seed/${i+100}/400/600`, link: '#',
+    }));
+  }
+  buildFilterPills();
+  updateStats();
+  renderShelf();
+}
+
+loadData();
+</script>
+</body>
+</html>

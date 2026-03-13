@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grand Shelf - Architecture & Programming Overview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 800px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        .nav-active { border-left-color: #d97706; background-color: #fef3c7; color: #92400e; font-weight: bold; }
+        .spine-effect { transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease; }
+        .spine-effect:hover { transform: translateY(-20px) rotate(2deg); filter: brightness(1.1); box-shadow: 10px 10px 20px rgba(0,0,0,0.3); z-index: 10; }
+        html { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f5f5f4; }
+        ::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #a8a29e; }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals & Amber Accent (Stone-50 background, Stone-800 text, Amber-600 highlights) -->
+    <!-- Application Structure Plan: A modern dashboard layout with a sticky sidebar for navigation and a main content area divided into logical architectural domains. This structure allows developers or stakeholders to linearly explore the stack, data flow, state management, and UI concepts, or quickly jump to specific technical details. Interactive diagrams and toggleable states replace static text to demonstrate the application's behavior conceptually. -->
+    <!-- Visualization & Content Choices: 
+         - Tech Stack: Grid layout with hover interactions to show definitions. 
+         - Data Flow: CSS/HTML block diagram with JS-triggered animation to simulate data fetching (NO SVG used).
+         - Performance Chart: Chart.js Bar chart illustrating the responsive grid constraints (Mobile vs Desktop) and rendering optimization.
+         - Spine UI Demo: CSS interactive elements demonstrating the exact hover physics described in the report. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="bg-stone-50 text-stone-800 flex h-screen overflow-hidden selection:bg-amber-200 selection:text-stone-900">
+
+    <aside class="w-64 bg-white border-r border-stone-200 flex flex-col hidden md:flex z-20 shadow-lg">
+        <div class="p-6 border-b border-stone-100 flex items-center gap-3">
+            <div class="w-8 h-8 bg-amber-600 rounded-lg flex items-center justify-center text-white font-black text-xl">&#128214;</div>
+            <h1 class="font-black text-xl tracking-tighter text-stone-900">Grand Shelf</h1>
+        </div>
+        <nav class="flex-1 overflow-y-auto py-4" id="sidebar-nav">
+            <a href="#overview" class="nav-link block px-6 py-3 border-l-4 border-transparent text-sm text-stone-500 hover:bg-stone-50 transition-colors">프로젝트 개요</a>
+            <a href="#stack" class="nav-link block px-6 py-3 border-l-4 border-transparent text-sm text-stone-500 hover:bg-stone-50 transition-colors">기술 스택</a>
+            <a href="#architecture" class="nav-link block px-6 py-3 border-l-4 border-transparent text-sm text-stone-500 hover:bg-stone-50 transition-colors">아키텍처 & 데이터 흐름</a>
+            <a href="#state" class="nav-link block px-6 py-3 border-l-4 border-transparent text-sm text-stone-500 hover:bg-stone-50 transition-colors">상태 관리 로직</a>
+            <a href="#uiux" class="nav-link block px-6 py-3 border-l-4 border-transparent text-sm text-stone-500 hover:bg-stone-50 transition-colors">UI/UX 디자인 시스템</a>
+            <a href="#performance" class="nav-link block px-6 py-3 border-l-4 border-transparent text-sm text-stone-500 hover:bg-stone-50 transition-colors">보안 & 성능 최적화</a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto relative" id="main-content">
+        <div class="max-w-5xl mx-auto p-6 md:p-12 space-y-24 pb-32">
+
+            <section id="overview" class="scroll-mt-12">
+                <div class="inline-block px-3 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-full mb-4 tracking-widest uppercase">Overview</div>
+                <h2 class="text-4xl md:text-5xl font-black mb-6 tracking-tight">프로그래밍 개요</h2>
+                <p class="text-lg text-stone-600 leading-relaxed max-w-3xl">
+                    <strong class="text-stone-900">Grand Shelf</strong>는 별도의 백엔드 서버 구축 없이 
+                    <span class="bg-emerald-100 text-emerald-800 px-1 rounded">Google Sheets</span>를 데이터베이스(CMS)로 활용하고, 
+                    <span class="bg-orange-100 text-orange-800 px-1 rounded">Firebase</span>를 통해 사용자 인터랙션을 관리하는 
+                    웹 기반 인터랙티브 북셸프 애플리케이션의 아키텍처 문서입니다. 이 대시보드는 해당 아키텍처를 시각적으로 탐색할 수 있도록 구성되었습니다.
+                </p>
+            </section>
+
+            <section id="stack" class="scroll-mt-12">
+                <h3 class="text-2xl font-bold mb-8 border-b border-stone-200 pb-2">1. 기술 스택 (Tech Stack)</h3>
+                <p class="mb-6 text-stone-600">애플리케이션을 구성하는 핵심 기술 요소입니다. 각 카드를 클릭하여 상세 역할을 확인하세요.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <button onclick="updateStackInfo('react')" class="text-left bg-white p-6 rounded-2xl shadow-sm border border-stone-200 hover:border-amber-400 hover:shadow-md transition-all group focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <div class="text-3xl mb-3">&#9881;</div>
+                        <h4 class="font-black text-lg mb-1 group-hover:text-amber-600 transition-colors">React</h4>
+                        <p class="text-sm text-stone-500">Frontend Core</p>
+                    </button>
+                    <button onclick="updateStackInfo('tailwind')" class="text-left bg-white p-6 rounded-2xl shadow-sm border border-stone-200 hover:border-amber-400 hover:shadow-md transition-all group focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <div class="text-3xl mb-3">&#127912;</div>
+                        <h4 class="font-black text-lg mb-1 group-hover:text-amber-600 transition-colors">Tailwind CSS</h4>
+                        <p class="text-sm text-stone-500">Styling & Layout</p>
+                    </button>
+                    <button onclick="updateStackInfo('firebase')" class="text-left bg-white p-6 rounded-2xl shadow-sm border border-stone-200 hover:border-amber-400 hover:shadow-md transition-all group focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <div class="text-3xl mb-3">&#128274;</div>
+                        <h4 class="font-black text-lg mb-1 group-hover:text-amber-600 transition-colors">Firebase</h4>
+                        <p class="text-sm text-stone-500">Auth & Firestore</p>
+                    </button>
+                    <button onclick="updateStackInfo('sheets')" class="text-left bg-white p-6 rounded-2xl shadow-sm border border-stone-200 hover:border-amber-400 hover:shadow-md transition-all group focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <div class="text-3xl mb-3">&#128202;</div>
+                        <h4 class="font-black text-lg mb-1 group-hover:text-amber-600 transition-colors">Google Sheets</h4>
+                        <p class="text-sm text-stone-500">Data Source (CMS)</p>
+                    </button>
+                    <button onclick="updateStackInfo('lucide')" class="text-left bg-white p-6 rounded-2xl shadow-sm border border-stone-200 hover:border-amber-400 hover:shadow-md transition-all group focus:outline-none focus:ring-2 focus:ring-amber-500">
+                        <div class="text-3xl mb-3">&#10024;</div>
+                        <h4 class="font-black text-lg mb-1 group-hover:text-amber-600 transition-colors">Lucide React</h4>
+                        <p class="text-sm text-stone-500">Icons</p>
+                    </button>
+                </div>
+
+                <div id="stack-detail" class="mt-6 p-6 bg-stone-100 rounded-2xl border border-stone-200 hidden">
+                    <h5 id="stack-detail-title" class="font-bold text-amber-700 text-lg mb-2"></h5>
+                    <p id="stack-detail-desc" class="text-stone-700 leading-relaxed"></p>
+                </div>
+            </section>
+
+            <section id="architecture" class="scroll-mt-12">
+                <h3 class="text-2xl font-bold mb-8 border-b border-stone-200 pb-2">2. 주요 아키텍처 및 데이터 흐름</h3>
+                <p class="mb-6 text-stone-600">서버 없이 동작하는 클라이언트 중심의 데이터 동기화 파이프라인입니다. 시뮬레이션 버튼을 눌러 데이터 흐름을 확인하세요.</p>
+
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-stone-200">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-10 relative">
+                        
+                        <div id="node-sheets" class="w-full md:w-1/3 p-4 border-2 border-emerald-200 bg-emerald-50 rounded-xl text-center z-10 transition-all duration-300">
+                            <div class="text-2xl mb-2">&#128209;</div>
+                            <div class="font-bold text-emerald-800 mb-1">Google Sheets</div>
+                            <div class="text-xs text-emerald-600">CSV Export (Read Only)</div>
+                        </div>
+
+                        <div class="hidden md:flex flex-1 items-center justify-center relative h-full z-0">
+                            <div class="w-full h-1 bg-stone-200 absolute"></div>
+                            <div id="arrow-1" class="w-4 h-4 rounded-full bg-amber-400 absolute opacity-0"></div>
+                        </div>
+                        <div class="md:hidden w-1 h-8 bg-stone-200"></div>
+
+                        <div id="node-react" class="w-full md:w-1/3 p-4 border-2 border-blue-200 bg-blue-50 rounded-xl text-center z-10 transition-all duration-300">
+                            <div class="text-2xl mb-2">&#128187;</div>
+                            <div class="font-bold text-blue-800 mb-1">React App</div>
+                            <div class="text-xs text-blue-600">State & UI Rendering</div>
+                        </div>
+
+                        <div class="hidden md:flex flex-1 items-center justify-center relative h-full z-0">
+                            <div class="w-full h-1 bg-stone-200 absolute"></div>
+                            <div id="arrow-2" class="w-4 h-4 rounded-full bg-orange-400 absolute opacity-0"></div>
+                        </div>
+                        <div class="md:hidden w-1 h-8 bg-stone-200"></div>
+
+                        <div id="node-firebase" class="w-full md:w-1/3 p-4 border-2 border-orange-200 bg-orange-50 rounded-xl text-center z-10 transition-all duration-300">
+                            <div class="text-2xl mb-2">&#9728;</div>
+                            <div class="font-bold text-orange-800 mb-1">Firebase</div>
+                            <div class="text-xs text-orange-600">Auth & Interactions</div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center mb-8">
+                        <button onclick="simulateDataFlow()" id="btn-simulate" class="bg-stone-900 text-white px-6 py-3 rounded-xl font-bold hover:bg-amber-600 transition-colors focus:ring-4 focus:ring-amber-200">
+                            데이터 흐름 시뮬레이션 시작
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8 border-t border-stone-100 pt-8">
+                        <div>
+                            <h4 class="font-bold text-stone-800 mb-2 flex items-center gap-2">
+                                <span class="bg-stone-200 text-stone-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                                동적 데이터 페칭
+                            </h4>
+                            <ul class="list-disc pl-5 text-sm text-stone-600 space-y-2">
+                                <li><code>fetchSheetData</code> 함수를 통해 <code>SHEET_CSV_URL</code> 호출</li>
+                                <li>쉼표(<code>,</code>)와 따옴표(<code>"</code>)를 처리하는 커스텀 CSV 파서 적용</li>
+                                <li>헤더 명칭 무관, 열 순서 기반 유연한 객체화 매핑 수행</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-stone-800 mb-2 flex items-center gap-2">
+                                <span class="bg-stone-200 text-stone-600 w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                                인증 및 퍼머넌트 데이터
+                            </h4>
+                            <ul class="list-disc pl-5 text-sm text-stone-600 space-y-2">
+                                <li>익명 인증 지원 및 <code>__initial_auth_token</code> 커스텀 토큰 복구</li>
+                                <li>Firestore 경로: <code class="bg-stone-100 px-1 py-0.5 rounded text-xs text-rose-600">/artifacts/{appId}/users/{userId}/interactions/{bookId}</code></li>
+                                <li>보안 규칙과 격리 준수</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="state" class="scroll-mt-12">
+                <h3 class="text-2xl font-bold mb-8 border-b border-stone-200 pb-2">3. 상태 관리 로직 (State Management)</h3>
+                <p class="mb-6 text-stone-600">애플리케이션 내 핵심 데이터 배열들이 어떻게 결합되어 최종 UI를 구성하는지 보여주는 논리 구조입니다.</p>
+
+                <div class="bg-stone-900 rounded-3xl overflow-hidden shadow-xl text-stone-300 font-mono text-sm">
+                    <div class="flex border-b border-stone-700 bg-stone-950">
+                        <button onclick="switchTab('tab-raw')" id="btn-tab-raw" class="px-6 py-4 hover:bg-stone-800 hover:text-white transition-colors border-b-2 border-amber-500 text-white bg-stone-800">1. allBooks (Raw)</button>
+                        <button onclick="switchTab('tab-user')" id="btn-tab-user" class="px-6 py-4 hover:bg-stone-800 hover:text-white transition-colors border-b-2 border-transparent">2. userInteractions</button>
+                        <button onclick="switchTab('tab-memo')" id="btn-tab-memo" class="px-6 py-4 hover:bg-stone-800 hover:text-white transition-colors border-b-2 border-transparent">3. filteredBooks (Result)</button>
+                    </div>
+                    
+                    <div id="tab-raw" class="p-6">
+                        <div class="text-stone-500 mb-4">// 구글 시트에서 가져온 원본 도서 목록 배열</div>
+                        <pre><code><span class="text-purple-400">const</span> [allBooks, setAllBooks] = <span class="text-blue-400">useState</span>([
+  { id: <span class="text-green-400">'book-1'</span>, title: <span class="text-green-400">'React 입문'</span>, category: <span class="text-green-400">'IT'</span> },
+  { id: <span class="text-green-400">'book-2'</span>, title: <span class="text-green-400">'Tailwind 완벽 가이드'</span>, category: <span class="text-green-400">'Design'</span> }
+]);</code></pre>
+                    </div>
+
+                    <div id="tab-user" class="p-6 hidden">
+                        <div class="text-stone-500 mb-4">// Firestore onSnapshot으로 동기화된 사용자별 상호작용(읽음 등) 상태 객체</div>
+                        <pre><code><span class="text-purple-400">const</span> [userInteractions, setUserInteractions] = <span class="text-blue-400">useState</span>({
+  <span class="text-green-400">'book-1'</span>: { isRead: <span class="text-orange-400">true</span>, updatedAt: <span class="text-green-400">'2026-03-13'</span> },
+  <span class="text-green-400">'book-2'</span>: { isRead: <span class="text-orange-400">false</span>, updatedAt: <span class="text-green-400">'2026-03-12'</span> }
+});</code></pre>
+                    </div>
+
+                    <div id="tab-memo" class="p-6 hidden">
+                        <div class="text-stone-500 mb-4">// useMemo를 사용해 상태 변경 시에만 도출되는 최적화된 결과 배열</div>
+                        <pre><code><span class="text-purple-400">const</span> filteredBooks = <span class="text-blue-400">useMemo</span>(() => {
+  <span class="text-purple-400">let</span> result = [...allBooks];
+  
+  <span class="text-stone-500">// userInteractions 데이터를 매핑하여 필터링 적용</span>
+  <span class="text-purple-400">if</span> (filter.readStatus === <span class="text-green-400">'읽음'</span>) {
+    result = result.<span class="text-blue-400">filter</span>(b => userInteractions[b.id]?.isRead);
+  }
+  
+  <span class="text-purple-400">return</span> result;
+}, [allBooks, userInteractions, filter]);</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <section id="uiux" class="scroll-mt-12">
+                <h3 class="text-2xl font-bold mb-8 border-b border-stone-200 pb-2">4. UI/UX 디자인 시스템 (Visual Shelf Demo)</h3>
+                <p class="mb-6 text-stone-600">다크 모드, 카테고리별 테마 적용, 그리고 호버 시의 물리적 반응(Spine Effect)을 시뮬레이션합니다.</p>
+
+                <div id="demo-container" class="bg-[#fcfaf7] border border-stone-200 p-8 rounded-3xl transition-colors duration-500 shadow-inner relative overflow-hidden">
+                    
+                    <div class="flex justify-end mb-12">
+                        <button onclick="toggleDarkMode()" class="bg-stone-200 hover:bg-stone-300 text-stone-800 px-4 py-2 rounded-lg text-xs font-bold transition-colors">
+                            &#9728; 다크 모드 토글
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-5 md:grid-cols-10 gap-1 px-4 mb-4 relative z-10">
+                        <div class="aspect-[1/3.2] bg-rose-900 border-r border-white/20 rounded-t-md spine-effect relative flex items-center justify-center cursor-pointer group">
+                            <span class="text-white text-[10px] md:text-xs font-black rotate-90 whitespace-nowrap opacity-80 group-hover:opacity-100">모험의 시작</span>
+                            <div class="absolute top-0 right-1 w-2 h-10 bg-rose-500 rounded-b-sm shadow-md"></div>
+                        </div>
+                        <div class="aspect-[1/3.2] bg-indigo-900 border-r border-white/20 rounded-t-md spine-effect relative flex items-center justify-center cursor-pointer group mt-2">
+                            <span class="text-white text-[10px] md:text-xs font-black rotate-90 whitespace-nowrap opacity-80 group-hover:opacity-100">판타지 월드</span>
+                        </div>
+                        <div class="aspect-[1/3.2] bg-emerald-900 border-r border-white/20 rounded-t-md spine-effect relative flex items-center justify-center cursor-pointer group">
+                            <span class="text-white text-[10px] md:text-xs font-black rotate-90 whitespace-nowrap opacity-80 group-hover:opacity-100">요리 레시피</span>
+                            <div class="absolute top-0 right-1 w-2 h-10 bg-rose-500 rounded-b-sm shadow-md"></div>
+                        </div>
+                        <div class="aspect-[1/3.2] bg-amber-900 border-r border-white/20 rounded-t-md spine-effect relative flex items-center justify-center cursor-pointer group mt-1">
+                            <span class="text-white text-[10px] md:text-xs font-black rotate-90 whitespace-nowrap opacity-80 group-hover:opacity-100">인문학 교양</span>
+                        </div>
+                        <div class="aspect-[1/3.2] bg-slate-800 border-r border-white/20 rounded-t-md spine-effect relative flex items-center justify-center cursor-pointer group mt-3">
+                            <span class="text-white text-[10px] md:text-xs font-black rotate-90 whitespace-nowrap opacity-80 group-hover:opacity-100">우주 과학</span>
+                        </div>
+                    </div>
+
+                    <div id="demo-shelf" class="h-10 w-full relative shadow-2xl rounded-sm bg-[#a68b7c] transition-colors duration-500 z-0">
+                         <div class="absolute -top-2 left-0 right-0 h-2 bg-black/60 blur-[3px]"></div>
+                    </div>
+
+                    <div class="mt-8 text-center text-sm text-stone-500" id="demo-caption">
+                        책등에 마우스를 올려(Spine Effect) 호버 애니메이션과 북마크 리본 UI를 확인하세요.
+                    </div>
+                </div>
+            </section>
+
+            <section id="performance" class="scroll-mt-12">
+                <h3 class="text-2xl font-bold mb-8 border-b border-stone-200 pb-2">5. 성능 및 확장성 지표</h3>
+                <p class="mb-6 text-stone-600">애플리케이션의 렌더링 최적화(Memoization)와 반응형 환경에서의 그리드 제어 정책을 차트로 시각화합니다.</p>
+                
+                <div class="bg-white p-6 rounded-3xl shadow-sm border border-stone-200">
+                    <div class="chart-container">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                    <div class="mt-6 text-sm text-stone-600 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-stone-50 p-4 rounded-xl border border-stone-100">
+                            <strong class="text-stone-800 block mb-1">반응형 그리드 로직</strong>
+                            뷰포트 너비에 따라 렌더링되는 책의 개수를 제한하여 모바일 환경의 DOM 오버헤드를 감소시킵니다 (Mobile: 5권 / Desktop: 10권).
+                        </div>
+                        <div class="bg-stone-50 p-4 rounded-xl border border-stone-100">
+                            <strong class="text-stone-800 block mb-1">렌더링 소요 시간 최적화</strong>
+                            <code>useMemo</code>를 활용한 필터링 캐싱 처리로, 타이핑 검색 시 발생하는 무거운 재배열 연산 속도를 크게 단축했습니다.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+        
+        <footer class="bg-white border-t border-stone-200 py-10 text-center">
+            <p class="text-xs text-stone-400 uppercase tracking-widest font-bold">Grand Shelf Architecture Overview &bull; 2026</p>
+        </footer>
+    </main>
+
+    <script>
+        // Data for Tech Stack Section
+        const stackData = {
+            react: { title: "React (Functional Components & Hooks)", desc: "뷰(View) 계층을 담당하며, useMemo, useCallback 등 훅(Hooks)을 사용하여 선언적이고 성능이 최적화된 상태 관리를 수행합니다." },
+            tailwind: { title: "Tailwind CSS", desc: "유틸리티 퍼스트 기반의 스타일링 프레임워크로, 커스텀 CSS 작성 없이 반응형 레이아웃, 다크 모드, 그리고 책등(Spine) 애니메이션과 같은 복잡한 상태 스타일을 처리합니다." },
+            firebase: { title: "Firebase (Auth & Firestore)", desc: "백엔드 인프라입니다. 익명 로그인(Anonymous Auth)을 통해 사용자 이탈을 막고, onSnapshot을 활용해 도서 읽음 상태를 실시간으로 동기화합니다." },
+            sheets: { title: "Google Sheets", desc: "가벼운 CMS(Content Management System) 역할을 합니다. 관리자가 엑셀에 데이터를 추가하고 CSV로 배포하면 애플리케이션이 실시간으로 페칭합니다." },
+            lucide: { title: "Lucide React", desc: "애플리케이션 내의 직관적인 사용자 인터페이스를 돕기 위해 사용되는 가볍고 일관된 오픈소스 아이콘 라이브러리입니다." }
+        };
+
+        function updateStackInfo(key) {
+            const detailBox = document.getElementById('stack-detail');
+            const titleEl = document.getElementById('stack-detail-title');
+            const descEl = document.getElementById('stack-detail-desc');
+            
+            titleEl.textContent = stackData[key].title;
+            descEl.textContent = stackData[key].desc;
+            
+            detailBox.classList.remove('hidden');
+            detailBox.classList.add('animate-pulse');
+            setTimeout(() => detailBox.classList.remove('animate-pulse'), 300);
+        }
+
+        // Data Flow Simulation Logic
+        function simulateDataFlow() {
+            const btn = document.getElementById('btn-simulate');
+            const nodeSheets = document.getElementById('node-sheets');
+            const nodeReact = document.getElementById('node-react');
+            const nodeFirebase = document.getElementById('node-firebase');
+            const arrow1 = document.getElementById('arrow-1');
+            const arrow2 = document.getElementById('arrow-2');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            btn.textContent = '페칭 중... (CSV)';
+
+            // Step 1: Sheets -> React
+            nodeSheets.classList.replace('border-emerald-200', 'border-emerald-500');
+            nodeSheets.classList.replace('bg-emerald-50', 'bg-emerald-100');
+            nodeSheets.style.transform = 'scale(1.05)';
+            
+            arrow1.style.opacity = '1';
+            arrow1.style.transform = 'translateX(-100px)';
+            arrow1.style.transition = 'transform 1s linear';
+            
+            setTimeout(() => {
+                arrow1.style.transform = 'translateX(100px)';
+            }, 50);
+
+            setTimeout(() => {
+                nodeSheets.classList.replace('border-emerald-500', 'border-emerald-200');
+                nodeSheets.classList.replace('bg-emerald-100', 'bg-emerald-50');
+                nodeSheets.style.transform = 'scale(1)';
+                arrow1.style.opacity = '0';
+
+                // Step 2: React processing
+                btn.textContent = 'UI 렌더링 & Auth 연동';
+                nodeReact.classList.replace('border-blue-200', 'border-blue-500');
+                nodeReact.classList.replace('bg-blue-50', 'bg-blue-100');
+                nodeReact.style.transform = 'scale(1.05)';
+                
+                setTimeout(() => {
+                    // Step 3: React <-> Firebase
+                    btn.textContent = 'Firestore onSnapshot 동기화';
+                    arrow2.style.opacity = '1';
+                    arrow2.style.transform = 'translateX(-100px)';
+                    arrow2.style.transition = 'transform 0.5s alternate infinite';
+                    
+                    setTimeout(() => {
+                        arrow2.style.transform = 'translateX(100px)';
+                    }, 50);
+
+                    nodeFirebase.classList.replace('border-orange-200', 'border-orange-500');
+                    nodeFirebase.classList.replace('bg-orange-50', 'bg-orange-100');
+                    nodeFirebase.style.transform = 'scale(1.05)';
+
+                    setTimeout(() => {
+                        // Reset all
+                        nodeReact.classList.replace('border-blue-500', 'border-blue-200');
+                        nodeReact.classList.replace('bg-blue-100', 'bg-blue-50');
+                        nodeReact.style.transform = 'scale(1)';
+
+                        nodeFirebase.classList.replace('border-orange-500', 'border-orange-200');
+                        nodeFirebase.classList.replace('bg-orange-100', 'bg-orange-50');
+                        nodeFirebase.style.transform = 'scale(1)';
+
+                        arrow2.style.transition = 'none';
+                        arrow2.style.opacity = '0';
+                        arrow2.style.transform = 'translateX(0)';
+                        arrow1.style.transform = 'translateX(0)';
+
+                        btn.disabled = false;
+                        btn.classList.remove('opacity-50');
+                        btn.textContent = '데이터 흐름 시뮬레이션 시작';
+                    }, 1500);
+
+                }, 1000);
+            }, 1000);
+        }
+
+        // State Tab Logic
+        function switchTab(tabId) {
+            ['tab-raw', 'tab-user', 'tab-memo'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+                const btn = document.getElementById('btn-' + id);
+                btn.classList.remove('border-amber-500', 'text-white', 'bg-stone-800');
+                btn.classList.add('border-transparent');
+            });
+            
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('border-amber-500', 'text-white', 'bg-stone-800');
+            activeBtn.classList.remove('border-transparent');
+        }
+
+        // UI/UX Dark Mode Toggle Logic
+        let isDark = false;
+        function toggleDarkMode() {
+            isDark = !isDark;
+            const container = document.getElementById('demo-container');
+            const shelf = document.getElementById('demo-shelf');
+            const caption = document.getElementById('demo-caption');
+            
+            if (isDark) {
+                container.classList.replace('bg-[#fcfaf7]', 'bg-[#0a0705]');
+                container.classList.replace('border-stone-200', 'border-stone-800');
+                shelf.classList.replace('bg-[#a68b7c]', 'bg-[#2a1b11]');
+                caption.classList.replace('text-stone-500', 'text-stone-400');
+            } else {
+                container.classList.replace('bg-[#0a0705]', 'bg-[#fcfaf7]');
+                container.classList.replace('border-stone-800', 'border-stone-200');
+                shelf.classList.replace('bg-[#2a1b11]', 'bg-[#a68b7c]');
+                caption.classList.replace('text-stone-400', 'text-stone-500');
+            }
+        }
+
+        // Chart.js Setup
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['도서 표시 수 (Mobile)', '도서 표시 수 (Desktop)', '필터 렌더속도 (w/o Memo)', '필터 렌더속도 (w/ Memo)'],
+                    datasets: [
+                        {
+                            label: '단위 (개 / ms)',
+                            data: [5, 10, 120, 15],
+                            backgroundColor: [
+                                'rgba(217, 119, 6, 0.2)', // amber-600 light
+                                'rgba(217, 119, 6, 0.6)',
+                                'rgba(244, 63, 94, 0.6)', // rose-500
+                                'rgba(16, 185, 129, 0.6)' // emerald-500
+                            ],
+                            borderColor: [
+                                'rgb(217, 119, 6)',
+                                'rgb(217, 119, 6)',
+                                'rgb(244, 63, 94)',
+                                'rgb(16, 185, 129)'
+                            ],
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) { label += ': '; }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y + (context.dataIndex < 2 ? ' 개' : ' ms');
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Scrollspy Logic
+            const sections = document.querySelectorAll("section");
+            const navLinks = document.querySelectorAll(".nav-link");
+            const mainContent = document.getElementById("main-content");
+
+            mainContent.addEventListener("scroll", () => {
+                let current = "";
+                sections.forEach((section) => {
+                    const sectionTop = section.offsetTop;
+                    if (mainContent.scrollTop >= sectionTop - 150) {
+                        current = section.getAttribute("id");
+                    }
+                });
+
+                navLinks.forEach((link) => {
+                    link.classList.remove("nav-active");
+                    link.classList.add("text-stone-500", "border-transparent");
+                    if (link.getAttribute("href").includes(current)) {
+                        link.classList.add("nav-active");
+                        link.classList.remove("text-stone-500", "border-transparent");
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
